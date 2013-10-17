@@ -17,6 +17,7 @@
 *.DS_Store
 
 #Visual Studio files
+*.pdb
 *.[Oo]bj
 *.user
 *.aps
