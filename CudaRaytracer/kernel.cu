@@ -8,28 +8,29 @@
 
 #include <GL/glew.h>
 #include <glm.hpp>
+#include <glut.h>
 
 
-#define WINDOW 800
-
-GLuint vbo;
-
-__global__ 
-void hello(char *a, int *b) 
+void display(void)
 {
-	a[threadIdx.x] += b[threadIdx.x];
+
 }
- 
-int main()
+
+int main(int argc, char** argv)
 {
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glVertexPointer(2, GL_FLOAT, 12, 0);
-	glColorPointer(4,GL_UNSIGNED_BYTE,12,(GLvoid*)8);
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glDrawArrays(GL_POINTS, 0, WINDOW * WINDOW);
-	glDisableClientState(GL_VERTEX_ARRAY);
-
+	glutInit (&argc, argv);
+	// specify the display mode to be RGB and single buffering:
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+	// specify the initial window position:
+	glutInitWindowPosition(100,100);
+	// specify the initial window size:
+	glutInitWindowSize(800, 600);
+	// create the window and set title:
+	glutCreateWindow("Ray tracer");
+	
+	glutDisplayFunc(display);
+	
+	glutMainLoop();
+	
 	return EXIT_SUCCESS;
 }
