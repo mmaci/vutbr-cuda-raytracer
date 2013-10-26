@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="kernel.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="constants.h" />
+    <ClInclude Include="primitive.h">
+      <Filter>mathematics</Filter>
+    </ClInclude>
+    <ClInclude Include="sphere.h">
+      <Filter>mathematics</Filter>
+    </ClInclude>
+    <ClInclude Include="mathematics.h">
+      <Filter>mathematics</Filter>
+    </ClInclude>
+    <ClInclude Include="material.h">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="color.h">
+      <Filter>materials</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="mathematics">
+      <UniqueIdentifier>{1cabccd4-ff8c-4269-b1c9-5ff26e5ebb4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="materials">
+      <UniqueIdentifier>{c946bf6e-67c4-42ea-ad64-417fcee3b260}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

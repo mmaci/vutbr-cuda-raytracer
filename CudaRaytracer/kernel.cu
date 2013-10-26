@@ -4,7 +4,7 @@
 #include "device_launch_parameters.h"
 
 #include <iostream>
-#include "contants.h"
+#include "constants.h"
 
 #include <GL/glew.h>
 #include <glm.hpp>
