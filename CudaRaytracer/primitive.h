@@ -2,7 +2,7 @@
 #define PRIMITIVE_H
 
 #include "material.h"
-#include "mathematics.h"
+#include "vector3.h"
 
 class Primitive
 {

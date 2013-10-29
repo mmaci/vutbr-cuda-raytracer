@@ -41,11 +41,11 @@ struct vector3
 			_z /= size;
 
 			return *this;
-		}
+		}			
 
 		bool isNull() const
 		{
-			return ( _x < 0.0f && _y == 0.0f && _z == 0.0f );
+			return ( _x <= 0.0f && _y <= 0.0f && _z <= 0.0f );
 		}
 
 	private:
