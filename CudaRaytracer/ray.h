@@ -1,24 +1,22 @@
 #ifndef RAY_H
 #define RAY_H
 
-#include "vector3.h"
+#include <vector_types.h>
+#include "mathematics.h"
 
-struct ray {
-	public:
-		ray() 
-		{}
+struct Ray {
 
-		ray(vector3 origin, vector3 direction) :
-			_origin(origin), _direction(direction)
-		{}
+	__device__ Ray()
+	{}
 
-		public void setOrigin(vector3 origin) { _origin = origin; }
+	__device__ Ray(float3 const& o, float3 const& d)
+		: origin(o), dir(d)
+	{
+		math::devNormalize(dir);
+	}
 
-		public void setDirection(vector3 direction) { _direction = direction; }
+	float3 origin, dir;
 
-	private:
-		vector3 _origin;
-		vector3 _direction;
 };
 
 #endif

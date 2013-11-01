@@ -1,18 +1,19 @@
 #ifndef SPHERE_H
 #define SPHERE_H
 
-#include "primitive.h"
+#include <vector_types.h>
 
-class Sphere : public Primitive
+struct Sphere
 {
-	public:
-		Sphere(vector3 const& center, float const& r)
-			: _center(center), _radius(r)
-		{ }		
+	__device__ Sphere()
+	{}
 
-	private:
-		vector3 _center;
-		float _radius;
+	__device__ Sphere(float3 const& c, float const& r)
+		: center(c), radius(r)
+	{}
+
+	float3 center;
+	float radius;
 };
 
 #endif

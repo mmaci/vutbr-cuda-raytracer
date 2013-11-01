@@ -150,13 +150,14 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="color.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="material.h" />
-    <ClInclude Include="primitive.h" />
     <ClInclude Include="mathematics.h" />
+    <ClInclude Include="ray.h" />
     <ClInclude Include="sphere.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

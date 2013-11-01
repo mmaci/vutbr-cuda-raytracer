@@ -1,7 +1,9 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
+/*
 #include "color.h"
+
 
 struct material
 {
@@ -33,5 +35,6 @@ struct material
 		float		_transmittence;
 		float		_refraction;
 };
+*/
 
 #endif
