@@ -1,4 +1,4 @@
-
+﻿
 #include "cuda.h"
 #include "device_launch_parameters.h"
 #include <cuda_runtime.h>
@@ -11,115 +11,143 @@
 #include <glut.h>
 #include <cuda_gl_interop.h>
 
+#include <vector_types.h>
+#include <vector_functions.h>
+#include <vector>
+
 #include "ray.h"
 #include "sphere.h"
 #include "color.h"
-
-#include <vector_types.h>
-#include <vector_functions.h>
 #include "mathematics.h"
+#include <time.h>
 
-#define NUM_SPHERES 2
+extern "C" void launchRTKernel(uchar4* , uint32, uint32);
 
-Sphere spheres[NUM_SPHERES];
+/** @var GLuint pixel buffer object */
 GLuint PBO;
+	
+/** @var GLuint texture buffer */
+GLuint textureId;
 
-// Camera parameters -----------------------------
-float3 a; float3 b; float3 c; 
-float3 campos; 
-float cameraRotation = 0.f;
-float cameraDistance = 75.f;
-float cameraHeight = 25.f;
-
-extern "C" void RayTraceImage(float3* dataOut, Sphere* spheres, uint32 numSpheres,
-		               float3 a, float3 b, float3 c, 
-		               float3 campos);
-
-
-void rayTrace()
+/**
+ * 1. Maps the the PBO (Pixel Buffer Object) to a data pointer
+ * 2. Launches the kernel
+ * 3. Unmaps the PBO
+ */ 
+void runCuda()
 {
-	float3* outData;
-	cudaGLMapBufferObject((void**)&outData, PBO);
-
-	RayTraceImage(outData, spheres, NUM_SPHERES, a, b, c, campos);
-
-	cudaGLUnmapBufferObject(PBO);	
+	uchar4* data = nullptr; 
+	cudaGLMapBufferObject((void**)&data, PBO);
+   
+	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT);
+  
+	cudaGLUnmapBufferObject(PBO);
 }
 
 
-void display(void)
-{	
-	glClearColor(0, 0, 0, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+/**
+ * Display callback
+ * Launches both the kernel and draws the scene
+ */
+void display()
+{
+	// run the Kernel
+	runCuda();
+   
+	// and draw everything
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, PBO);
+	glBindTexture(GL_TEXTURE_2D, textureId);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-	rayTrace();
-	
+
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(0.0f,0.0f,0.0f);
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(0.0f,1.0f,0.0f);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f(1.0f,1.0f,0.0f);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f(1.0f,0.0f,0.0f);
+	glEnd();
+
+ 
 	glutSwapBuffers();
-	glutPostRedisplay();
+	glutPostRedisplay();  
 }
 
-void init()
-{
-	// initialize the PBO for transferring data from CUDA to openGL
-	uint32 num = WIDTH * HEIGHT;
-	uint32 dataSize = sizeof(float3) * num;
-	void *data = malloc(dataSize);
-
-	// create buffer object
-	glGenBuffers(1, &PBO);
-	glBindBuffer(GL_ARRAY_BUFFER, PBO);
-	glBufferData(GL_ARRAY_BUFFER, dataSize, data, GL_DYNAMIC_DRAW);
-	free(data);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// register this buffer object with CUDA
-	cudaGLRegisterBufferObject(PBO);	
-}
-
-void initCamera()
-{
-	campos = make_float3(cos(cameraRotation)*cameraDistance, cameraHeight, -sin(cameraRotation)* cameraDistance);
-	float3 cam_dir = -1.f * campos;
-	math::normalize(cam_dir);
-	float3 cam_up  = make_float3(0,1,0);
-	float3 cam_right = math::crossProduct(cam_dir,cam_up);
-	math::normalize(cam_right);
-
-	cam_up = -1.f * math::crossProduct(cam_dir,cam_right);
-	math::normalize(cam_up);
+/**
+ * Initializes the CUDA part of the app
+ *
+ * @param int number of args
+ * @param char** arg values
+ */
+void initCuda(int argc, char** argv)
+{	  
+	int numValues = WINDOW_SIZE * sizeof(uchar4);
+    int sizeData = sizeof(GLubyte) * numValues;
+     
+    // Generate, bind and register the PBO
+    glGenBuffers(1, &PBO);    
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, PBO);    
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, sizeData, NULL, GL_DYNAMIC_COPY);
+    cudaGLRegisterBufferObject(PBO);
 	
-	float FOV = 60.0f;
-	float theta = (FOV*3.1415*0.5) / 180.0f;
-	float half_width = tanf(theta);
-	float aspect = (float)WIDTH / (float)HEIGHT;
-
-	float u0 = -half_width * aspect;
-	float v0 = -half_width;
-	float u1 =  half_width * aspect;
-	float v1 =  half_width;
-	float dist_to_image = 1;
-
-	a = (u1-u0)*cam_right;
-	b = (v1-v0)*cam_up;
-	c = campos + u0*cam_right + v0*cam_up + dist_to_image*cam_dir;
+	glEnable(GL_TEXTURE_2D);   
+	glGenTextures(1, &textureId);
+	glBindTexture(GL_TEXTURE_2D, textureId);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+  
+	runCuda();
 }
 
-int main(int argc, char** argv)
-{
+/**
+ * Initializes the OpenGL part of the app
+ *
+ * @param int number of args
+ * @param char** arg values
+ */
+void initGL(int argc, char** argv)
+{	
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-	glutInitWindowSize(WIDTH, HEIGHT);	
-	glutCreateWindow("Ray tracer");
-	
-	glewInit();
-	init();
-	initCamera();
-
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
+	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+	glutCreateWindow(APP_NAME);
 	glutDisplayFunc(display);
-	
+   
+	// check for necessary OpenGL extensions
+	glewInit();
+	if (!glewIsSupported("GL_VERSION_2_0")) {
+		std::cerr << "ERROR: Support for necessary OpenGL extensions missing.";
+		return;
+	}
+     
+	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);   
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glDisable(GL_DEPTH_TEST);
+      
+	// set matrices
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+ 
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f);   	
+}
+
+/**
+ * Main
+ *
+ * @param int number of args
+ * @param char** arg values
+ */
+int main(int argc, char** argv)
+{	 
+	initGL(argc, argv);
+	initCuda(argc, argv);  
+   
+	glutDisplayFunc(display);
 	glutMainLoop();
-	cudaThreadExit();	
+     
+	cudaThreadExit();  
 
 	return EXIT_SUCCESS;
 }
