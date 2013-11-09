@@ -11,15 +11,10 @@
 #include <glut.h>
 #include <cuda_gl_interop.h>
 
-#include <vector_types.h>
-#include <vector_functions.h>
-#include <vector>
-
 #include "ray.h"
 #include "sphere.h"
 #include "color.h"
 #include "mathematics.h"
-#include <time.h>
 
 extern "C" void launchRTKernel(uchar4* , uint32, uint32);
 
@@ -29,21 +24,32 @@ GLuint PBO;
 /** @var GLuint texture buffer */
 GLuint textureId;
 
+/** @var cudaGraphicsResource_t cuda data resource */
+cudaGraphicsResource_t cudaResourceBuffer;
+
+/** @var cudaGraphicsResource_t cuda texture resource */
+cudaGraphicsResource_t cudaResourceTexture;
+
 /**
  * 1. Maps the the PBO (Pixel Buffer Object) to a data pointer
  * 2. Launches the kernel
  * 3. Unmaps the PBO
  */ 
 void runCuda()
-{
-	uchar4* data = nullptr; 
-	cudaGLMapBufferObject((void**)&data, PBO);
+{	
+	uchar4* data;
+	size_t numBytes;
+
+	cudaGraphicsMapResources(1, &cudaResourceBuffer, 0);
+	cudaGraphicsMapResources(1, &cudaResourceTexture, 0);
+	
+	cudaGraphicsResourceGetMappedPointer((void **)&data, &numBytes, cudaResourceBuffer);
    
 	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT);
-  
-	cudaGLUnmapBufferObject(PBO);
-}
 
+	cudaGraphicsUnmapResources(1, &cudaResourceBuffer, 0);
+	cudaGraphicsUnmapResources(1, &cudaResourceTexture, 0);	
+}
 
 /**
  * Display callback
@@ -83,18 +89,24 @@ void initCuda(int argc, char** argv)
 	int numValues = WINDOW_SIZE * sizeof(uchar4);
     int sizeData = sizeof(GLubyte) * numValues;
      
-    // Generate, bind and register the PBO
+    // Generate, bind and register the Pixel Buffer Object (PBO)
     glGenBuffers(1, &PBO);    
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, PBO);    
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, sizeData, NULL, GL_DYNAMIC_COPY);
-    cudaGLRegisterBufferObject(PBO);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, PBO);    
+    glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, sizeData, NULL, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);    
+
+	cudaGraphicsGLRegisterBuffer(&cudaResourceBuffer, PBO, cudaGraphicsMapFlagsNone);
 	
+	// Generate, bind and register texture
 	glEnable(GL_TEXTURE_2D);   
 	glGenTextures(1, &textureId);
 	glBindTexture(GL_TEXTURE_2D, textureId);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0); // unbind
+
+	cudaGraphicsGLRegisterImage(&cudaResourceTexture, textureId, GL_TEXTURE_2D, cudaGraphicsMapFlagsNone);
   
 	runCuda();
 }
