@@ -24,22 +24,13 @@ void checkCUDAError()
  */
 __global__ void RTKernel(uchar4* data, uint32 width, uint32 height)
 {
-	uint32 i = blockIdx.x * blockDim.x + threadIdx.x;  
- 
-	if (i < WINDOW_SIZE)
-	{
-		// some random stuff
-		// here the raytracer will shoot the rays
+	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x;
+	uint32 Y = (blockIdx.y * blockDim.y) + threadIdx.y;
 
-		uint8 r = (i * width) & 0xff;
-		uint8 g = (i * height) & 0xff;
-		uint8 b = (i * (width + height)) & 0xff;
-     		
-		data[i].w = 0;
-		data[i].x = r;
-		data[i].y = g;
-		data[i].z = b;
-	}
+	data[WINDOW_WIDTH * Y + X].x = float(X) / float(WINDOW_WIDTH) * 255.f;
+	data[WINDOW_WIDTH * Y + X].y = float(Y) / float(WINDOW_HEIGHT) * 255.f;
+	data[WINDOW_WIDTH * Y + X].z = 0;
+	data[WINDOW_WIDTH * Y + X].w = 0;
 }
  
 /**
@@ -51,12 +42,11 @@ __global__ void RTKernel(uchar4* data, uint32 width, uint32 height)
  * @param float time
  */
 extern "C" void launchRTKernel(uchar4* data, uint32 imageWidth, uint32 imageHeight)
-{  
-	uint32 totalThreads = imageHeight * imageWidth;
-	uint32 numBlocks = totalThreads / NUM_THREADS;
-	numBlocks += ((totalThreads % NUM_THREADS) > 0) ? 1 : 0;
- 
-	RTKernel<<<numBlocks, NUM_THREADS>>>(data, imageWidth, imageHeight);
+{   	
+	dim3 threadsPerBlock(8, 8, 1); // 64 threads ~ 8*8
+	dim3 numBlocks(WINDOW_WIDTH / threadsPerBlock.x, WINDOW_HEIGHT / threadsPerBlock.y);
+
+	RTKernel<<<numBlocks, threadsPerBlock>>>(data, imageWidth, imageHeight);
    	
 	cudaThreadSynchronize();
 	checkCUDAError();

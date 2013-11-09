@@ -11,11 +11,6 @@
 #include <glut.h>
 #include <cuda_gl_interop.h>
 
-#include "ray.h"
-#include "sphere.h"
-#include "color.h"
-#include "mathematics.h"
-
 extern "C" void launchRTKernel(uchar4* , uint32, uint32);
 
 /** @var GLuint pixel buffer object */
@@ -41,14 +36,13 @@ void runCuda()
 	size_t numBytes;
 
 	cudaGraphicsMapResources(1, &cudaResourceBuffer, 0);
-	cudaGraphicsMapResources(1, &cudaResourceTexture, 0);
-	
+	// cudaGraphicsMapResources(1, &cudaResourceTexture, 0);
 	cudaGraphicsResourceGetMappedPointer((void **)&data, &numBytes, cudaResourceBuffer);
    
 	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 	cudaGraphicsUnmapResources(1, &cudaResourceBuffer, 0);
-	cudaGraphicsUnmapResources(1, &cudaResourceTexture, 0);	
+	// cudaGraphicsUnmapResources(1, &cudaResourceTexture, 0);	
 }
 
 /**
@@ -57,6 +51,8 @@ void runCuda()
  */
 void display()
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
 	// run the Kernel
 	runCuda();
    
@@ -65,14 +61,12 @@ void display()
 	glBindTexture(GL_TEXTURE_2D, textureId);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(0.0f,0.0f,0.0f);
 	glTexCoord2f(0.0f, 0.0f); glVertex3f(0.0f,1.0f,0.0f);
 	glTexCoord2f(1.0f, 0.0f); glVertex3f(1.0f,1.0f,0.0f);
 	glTexCoord2f(1.0f, 1.0f); glVertex3f(1.0f,0.0f,0.0f);
 	glEnd();
-
  
 	glutSwapBuffers();
 	glutPostRedisplay();  
@@ -85,9 +79,8 @@ void display()
  * @param char** arg values
  */
 void initCuda(int argc, char** argv)
-{	  
-	int numValues = WINDOW_SIZE * sizeof(uchar4);
-    int sizeData = sizeof(GLubyte) * numValues;
+{	  	
+    int sizeData = sizeof(uchar4) * WINDOW_SIZE;
      
     // Generate, bind and register the Pixel Buffer Object (PBO)
     glGenBuffers(1, &PBO);    
@@ -101,12 +94,12 @@ void initCuda(int argc, char** argv)
 	glEnable(GL_TEXTURE_2D);   
 	glGenTextures(1, &textureId);
 	glBindTexture(GL_TEXTURE_2D, textureId);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glBindTexture(GL_TEXTURE_2D, 0); // unbind
 
-	cudaGraphicsGLRegisterImage(&cudaResourceTexture, textureId, GL_TEXTURE_2D, cudaGraphicsMapFlagsNone);
+	// cudaGraphicsGLRegisterImage(&cudaResourceTexture, textureId, GL_TEXTURE_2D, cudaGraphicsMapFlagsNone);
   
 	runCuda();
 }
