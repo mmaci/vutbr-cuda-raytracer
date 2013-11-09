@@ -4,19 +4,21 @@
 #include <vector_types.h>
 #include "mathematics.h"
 
-struct Ray {
+namespace CUDA {
+	namespace geometry {
 
-	__device__ Ray()
-	{}
+		struct Ray {
+			__device__ Ray()
+			{}
 
-	__device__ Ray(float3 const& o, float3 const& d)
-		: origin(o), dir(d)
-	{
-		math::devNormalize(dir);
+			__device__ Ray(float3 const& o, float3 const& d)
+				: origin(o), direction(d)
+			{}
+
+			float3 origin, direction;
+		};
+
 	}
-
-	float3 origin, dir;
-
-};
+}
 
 #endif
