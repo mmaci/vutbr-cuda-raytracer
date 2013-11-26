@@ -17,6 +17,9 @@
     <ClInclude Include="mathematics.h">
       <Filter>mathematics</Filter>
     </ClInclude>
+    <ClInclude Include="plane.h">
+      <Filter>mathematics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="mathematics">
