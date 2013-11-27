@@ -6,8 +6,10 @@
 #include "plane.h"
 #include "mathematics.h"
 #include "camera.h"
+#include "plane.h"
 
 using namespace CUDA;
+
 
 /**
  * Checks for error and if found writes to cerr and exits program. 
@@ -60,7 +62,7 @@ __global__ void RTKernel(uchar4* data, uint32 width, uint32 height)
 		data[WINDOW_WIDTH * Y + X].y = 0;
 		data[WINDOW_WIDTH * Y + X].z = 0;
 		data[WINDOW_WIDTH * Y + X].w = 0;
-	}   
+	}
 }
  
 /**
