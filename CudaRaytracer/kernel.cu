@@ -3,7 +3,9 @@
 
 #include "ray.h"
 #include "sphere.h"
+#include "plane.h"
 #include "mathematics.h"
+#include "camera.h"
 
 using namespace CUDA;
 
@@ -32,24 +34,26 @@ __global__ void RTKernel(uchar4* data, uint32 width, uint32 height)
 {
 	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x;
 	uint32 Y = (blockIdx.y * blockDim.y) + threadIdx.y;
+	
+	float x = (2.f*X/WINDOW_WIDTH - 1.f);
+	float y = (2.f*Y/WINDOW_HEIGHT - 1.f);
 
-	geometry::Ray ray(make_float3(X, Y, -1000.f), make_float3(0.f, 0.f, 1.f));
-	geometry::Sphere sphere(make_float3(300.f, 300.f, 0.f), 150.f);
-
-	float3 dist = sphere.origin - ray.origin;
-	double B = math::dot(ray.direction, dist);
-	double D = B*B - math::dot(dist, dist) + sphere.radius * sphere.radius; 
-    
-    double t0 = B - sqrt(D); 
-    double t1 = B + sqrt(D);
-    
-    if ((t0 > 0.1f) || (t1 > 0.1f)) 
-    {
-        data[WINDOW_WIDTH * Y + X].x = float(X) / float(WINDOW_WIDTH) * 255.f;
+	Camera cam;	
+	cam.lookAt(make_float3(2, 3, -7),  // eye
+             make_float3(5, 0, 1),   // target
+             make_float3(0, 1, 0),   // sky
+             30, (float)WINDOW_WIDTH/WINDOW_HEIGHT);
+	
+	Sphere s(make_float3(-1.7f, 4.f, 0.f), 1.6f);		
+	Plane p(make_float3(0, 0, 1), make_float3(0, 0, 15));
+	
+	if (s.intersect(cam.getRay(x, y))) {		
+		data[WINDOW_WIDTH * Y + X].x = float(X) / float(WINDOW_WIDTH) * 255.f;
 		data[WINDOW_WIDTH * Y + X].y = 0;
 		data[WINDOW_WIDTH * Y + X].z = float(Y) / float(WINDOW_WIDTH) * 255.f;
 		data[WINDOW_WIDTH * Y + X].w = 0;
-    } 
+				
+	}
 	else 
 	{
 		data[WINDOW_WIDTH * Y + X].x = 0;

@@ -5,20 +5,18 @@
 #include "mathematics.h"
 
 namespace CUDA {
-	namespace geometry {
 
 		struct Ray {
 			__device__ Ray()
 			{}
 
-			__device__ Ray(float3 const& o, float3 const& d)
-				: origin(o), direction(d)
+			__device__ Ray(float3 const& o, float3 d)
+				: origin(o), direction(math::normalize(d))
 			{}
 
 			float3 origin, direction;
 		};
 
-	}
 }
 
 #endif

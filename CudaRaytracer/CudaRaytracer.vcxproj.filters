@@ -2,29 +2,13 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="constants.h" />
-    <ClInclude Include="sphere.h">
-      <Filter>mathematics</Filter>
-    </ClInclude>
-    <ClInclude Include="material.h">
-      <Filter>materials</Filter>
-    </ClInclude>
-    <ClInclude Include="color.h">
-      <Filter>materials</Filter>
-    </ClInclude>
-    <ClInclude Include="ray.h">
-      <Filter>mathematics</Filter>
-    </ClInclude>
-    <ClInclude Include="mathematics.h">
-      <Filter>mathematics</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="mathematics">
-      <UniqueIdentifier>{1cabccd4-ff8c-4269-b1c9-5ff26e5ebb4f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="materials">
-      <UniqueIdentifier>{c946bf6e-67c4-42ea-ad64-417fcee3b260}</UniqueIdentifier>
-    </Filter>
+    <ClInclude Include="mathematics.h" />
+    <ClInclude Include="plane.h" />
+    <ClInclude Include="ray.h" />
+    <ClInclude Include="sphere.h" />
+    <ClInclude Include="color.h" />
+    <ClInclude Include="material.h" />
+    <ClInclude Include="camera.h" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="main.cpp" />
