@@ -33,6 +33,8 @@ namespace CUDA {
 	}
 }
 
+
+
 __device__ inline float3 operator- (float3 const& l, float3 const& r)
 { 
 	return make_float3(l.x - r.x, l.y - r.y, l.z - r.z);	

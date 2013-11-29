@@ -3,10 +3,11 @@
 
 #include "ray.h"
 #include "sphere.h"
-#include "plane.h"
 #include "mathematics.h"
 #include "camera.h"
 #include "plane.h"
+#include "light.h"
+#include "scene.h"
 
 using namespace CUDA;
 
@@ -22,6 +23,44 @@ void checkCUDAError()
 		std::cerr << "Cuda error: " << cudaGetErrorString(err) << std::endl;
 		exit(EXIT_FAILURE);
 	}
+}
+
+//__device__ Color TraceRay(const Ray &ray, Scene &scene, PointLight &light, int recursion){
+//	if (scene.Intersect(ray)) {
+	
+//		return scene.interSColor;
+//	} else
+//	{
+//		return Color(0, 0, 0);
+//	}
+//}
+	
+
+
+__device__ Color TraceRay(const Ray &ray,  Plane &p,  Sphere &s, PointLight &light, int recursion)
+{
+	float st = s.intersect(ray);
+	float pt = p.intersect(ray);
+	float3 point;
+	float3 normal;
+	
+	if ((pt==0.f) && (st == 0.f)){ //miss
+		return Color(0,0,0);
+	} else if (pt > st) //plane hit
+	{
+		point = ray.GetPoint(pt);
+		normal = p.GetNormal(point);
+		return p.color;
+
+	}else if (st >= pt) //sphere hit
+	{
+		point = ray.GetPoint(st);
+		normal = s.GetNormal(point);
+		return s.color;
+
+	};
+
+
 }
 
 /**
@@ -45,26 +84,27 @@ __global__ void RTKernel(uchar4* data, uint32 width, uint32 height)
              make_float3(5, 0, 1),   // target
              make_float3(0, 1, 0),   // sky
              30, (float)WINDOW_WIDTH/WINDOW_HEIGHT);
-	
-	Sphere s(make_float3(-1.7f, 4.f, 0.f), 1.6f);		
-	Plane p(make_float3(0, 0, 1), make_float3(0, 0, 15));
-	
-	if (s.intersect(cam.getRay(x, y))) {		
-		data[WINDOW_WIDTH * Y + X].x = float(X) / float(WINDOW_WIDTH) * 255.f;
-		data[WINDOW_WIDTH * Y + X].y = 0;
-		data[WINDOW_WIDTH * Y + X].z = float(Y) / float(WINDOW_WIDTH) * 255.f;
-		data[WINDOW_WIDTH * Y + X].w = 0;
-				
-	}
-	else 
-	{
-		data[WINDOW_WIDTH * Y + X].x = 0;
-		data[WINDOW_WIDTH * Y + X].y = 0;
-		data[WINDOW_WIDTH * Y + X].z = 0;
-		data[WINDOW_WIDTH * Y + X].w = 0;
-	}
+	Ray ray = cam.getRay(x,y);
+	Scene scene;
+
+	//scene.Add(Sphere(make_float3(8.f, 4.f, 0.f), 2.f,Color(255.f,0,0)));
+	//scene.Add(Plane(make_float3(10, 50, 100), make_float3(5.f, 0.f, 0.f),Color(0,0,255.f)));
+	Sphere s(make_float3(8.f, 4.f, 0.f), 2.f,Color(255.f,0,0));		
+	Plane p(make_float3(10, 50, 100), make_float3(5.f, 0.f, 0.f),Color(0,0,255.f));
+    //scene.Add(s);
+	//scene.Add(p);
+
+	PointLight l(make_float3(8.f, 10.f, 2.f),Color(0,255.f,0));
+	//Color c = TraceRay(ray,scene,l,15);
+	Color c = TraceRay(ray,p,s,l,15);
+	data[WINDOW_WIDTH * Y + X].x = c.red;
+	data[WINDOW_WIDTH * Y + X].y = c.green;
+	data[WINDOW_WIDTH * Y + X].z = c.blue;
+	data[WINDOW_WIDTH * Y + X].w = 0;
+
 }
  
+
 /**
  * Wrapper for the CUDA kernel
  *
