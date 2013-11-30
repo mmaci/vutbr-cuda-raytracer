@@ -21,6 +21,7 @@
 Sphere* devSpheres;
 Plane* devPlanes;
 Camera* devCamera;
+SceneStats* devSceneStats;
 
 /** @var GLuint pixel buffer object */
 GLuint PBO;
@@ -34,7 +35,7 @@ cudaGraphicsResource_t cudaResourceBuffer;
 /** @var cudaGraphicsResource_t cuda texture resource */
 cudaGraphicsResource_t cudaResourceTexture;
 
-extern "C" void launchRTKernel(uchar4* , uint32, uint32, Sphere*, Plane*, Camera*);
+extern "C" void launchRTKernel(uchar4* , uint32, uint32, Sphere*, Plane*,SceneStats*, Camera*);
 
 /**
  * 1. Maps the the PBO (Pixel Buffer Object) to a data pointer
@@ -50,7 +51,7 @@ void runCuda()
 	// cudaGraphicsMapResources(1, &cudaResourceTexture, 0);
 	cudaGraphicsResourceGetMappedPointer((void **)&data, &numBytes, cudaResourceBuffer);
    
-	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT, devSpheres, devPlanes, devCamera);
+	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT, devSpheres, devPlanes, devSceneStats, devCamera);
 
 	cudaGraphicsUnmapResources(1, &cudaResourceBuffer, 0);
 	// cudaGraphicsUnmapResources(1, &cudaResourceTexture, 0);	
@@ -119,6 +120,9 @@ void initScene(Scene* scene) {
 	
 	Sphere s(make_float3(8.f, 4.f, 0.f), 2.f,Color(255.f,0,0));
 	scene->add(s);
+	Sphere s1(make_float3(4.f, -5.f, 4.f), 4.f,Color(120.f,120.f,0));
+	scene->add(s1);
+
 	Plane p(make_float3(10, 50, 100), make_float3(5.f, 0.f, 0.f),Color(0,0,255.f));
 	scene->add(p);
 	
@@ -126,14 +130,16 @@ void initScene(Scene* scene) {
         make_float3(5.f, 0.f, 1.f),   // target
         make_float3(0.f, 1.f, 0.f),   // sky
         30, (float)WINDOW_WIDTH/WINDOW_HEIGHT);
-	
+
 	cudaMalloc((void***) &devSpheres, scene->getSphereCount() * sizeof(Sphere));
 	cudaMalloc((void***) &devPlanes, scene->getPlaneCount() * sizeof(Plane));
 	cudaMalloc((void***) &devCamera, sizeof(Camera));
+	cudaMalloc((void***) &devSceneStats, sizeof(SceneStats));
 
 	cudaMemcpy(devPlanes, scene->getPlanes(), scene->getPlaneCount() * sizeof(Plane), cudaMemcpyHostToDevice);
 	cudaMemcpy(devSpheres, scene->getSpheres(), scene->getSphereCount() * sizeof(Sphere), cudaMemcpyHostToDevice);
 	cudaMemcpy(devCamera, scene->getCamera(), sizeof(Camera), cudaMemcpyHostToDevice);
+	cudaMemcpy(devSceneStats, scene->getSceneStats() , sizeof(SceneStats), cudaMemcpyHostToDevice);
 }
 
 /**
