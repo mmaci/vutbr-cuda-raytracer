@@ -50,4 +50,9 @@ __device__ inline float3 operator* (float const& l, float3 const& r)
 	return make_float3(l * r.x, l * r.y, l * r.z);	
 }
 
+__device__ inline float3& operator*= (float3& l, float const& r)
+{ 
+	l.x *= r; l.y *= r; l.z *= r; return l;
+}
+
 #endif

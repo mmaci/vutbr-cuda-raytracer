@@ -48,19 +48,18 @@ __device__ Color TraceRay(const Ray &ray,  Plane &p,  Sphere &s, PointLight &lig
 		return Color(0,0,0);
 	} else if (pt > st) //plane hit
 	{
-		point = ray.GetPoint(pt);
-		normal = p.GetNormal(point);
+		point = ray.getPoint(pt);
+		normal = p.normal;
 		return p.color;
 
-	}else if (st >= pt) //sphere hit
+	} else if (st >= pt) //sphere hit
 	{
-		point = ray.GetPoint(st);
-		normal = s.GetNormal(point);
+		point = ray.getPoint(st);
+		normal = s.getNormal(point);
 		return s.color;
-
 	};
 
-
+	return Color();
 }
 
 /**

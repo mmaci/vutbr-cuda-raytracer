@@ -9,10 +9,9 @@ namespace CUDA {
 
 		struct Plane
 		{
-			__device__ Plane(float3 n, float3 point, Color c)				
-			{
-				color = c;
-				normal = n;
+			__device__ Plane(float3 n, float3 point, Color c)	
+				: color(c), normal(n)
+			{				
 				math::normalize(normal);
 				d = 1.f * math::dot(normal, point);
 			}
@@ -27,11 +26,7 @@ namespace CUDA {
 					}
 				}
 				return 0;
-			}
-			__device__ float3 GetNormal(float3 point = make_float3(0,0,0)){
-				return normal;
-				
-			}
+			}			
 
 			float3 normal;
 			float d;

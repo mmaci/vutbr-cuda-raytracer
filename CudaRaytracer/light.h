@@ -9,14 +9,14 @@
 namespace CUDA
 {
 	struct PointLight
-	{
-	  float3 p;
-      Color c;
-	  __device__ PointLight(const float3 &position, const Color &color) { p = position; c = color; }
-	  __device__ Ray GetShadowRay(const float3 &point) { return Ray(point, p - point); }
-      __device__ Color GetColor() { return c; }
+	{	  
+		__device__ PointLight(float3 const& p, Color const& c)
+			: position(p), color(c)
+		{ }
+		__device__ Ray getShadowRay(float3 const& point) { return Ray(point, position - point); }		
 	
-	
+		float3 position;
+		Color color;
 	};
 
 

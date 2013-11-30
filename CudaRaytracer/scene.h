@@ -24,7 +24,7 @@ namespace CUDA {
 				countS = 0;
 				countP = 0;
 			}
-			__device__ bool Add(Sphere &aSphere) {
+			__device__ bool add(Sphere &aSphere) {
 				if (countS == 0) {
 					countS++;
 					//cudaMalloc((Sphere *)s,sizeof(Sphere));
@@ -45,7 +45,7 @@ namespace CUDA {
 			
 			}
 
-			__device__ bool Add(Plane &aPlane){
+			__device__ bool add(Plane &aPlane){
 				if (countP == 0) {
 					countP++;
 					//p = (Plane*) malloc(sizeof(Plane));
@@ -62,7 +62,7 @@ namespace CUDA {
 				   return true;
 				}
 			}
-			__device__ bool Intersect(Ray const& ray) {
+			__device__ bool intersect(Ray const& ray) {
 		        int i;
 				float st,pt;
 				st = 0.f;
@@ -89,16 +89,16 @@ namespace CUDA {
 					return false;
 				} else if (pt > st) //plane hit
 				{
-					point = ray.GetPoint(pt);
-					normal = p[maxPi].GetNormal(point);
+					point = ray.getPoint(pt);
+					normal = p[maxPi].normal;
 					t = pt;
 					interSColor = p[maxPi].color;
 
 	
 				}else if (st >= pt) //sphere hit
 				{
-					point = ray.GetPoint(st);
-					normal = s[maxSi].GetNormal(point);
+					point = ray.getPoint(st);
+					normal = s[maxSi].getNormal(point);
 					t = st;
 					interSColor = s[maxSi].color;
 

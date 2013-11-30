@@ -34,11 +34,12 @@ namespace CUDA {
 				return 0.0;
 			}
 
-			__device__ float3 GetNormal(const float3 &position) {
+			__device__ float3 getNormal(float3 const& position) const {
 				float3 n = position - center;
 				math::normalize(n);
 				return n;
 			}
+
 			float3 center;
 			float radius;
 			Color color;
