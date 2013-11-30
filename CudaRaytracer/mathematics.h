@@ -108,6 +108,16 @@ namespace CUDA {
 	{ 
 		l.x *= r; l.y *= r; l.z *= r; return l;
 	}
+	__device__ inline float norm(float a) {
+		if (a > 1.f)
+		{
+			return 1.0;
+		}else
+		{
+			return a;
+		}
+	}
+
 }
 
 #endif

@@ -1,10 +1,12 @@
 #ifndef PLANE_H
 #define PLANE_H
 
+#include "phong.h"
+
 struct Plane
 {
-	Plane(float3 n, float3 point, Color c)	
-		: color(c), normal(n)
+	Plane(float3 n, float3 point, PhongInfo p)	
+		: phong(p), normal(n)
 	{				
 		normalize(normal);
 		d = 1.f * dot(normal, point);
@@ -24,7 +26,7 @@ struct Plane
 
 	float3 normal;
 	float d;
-	Color color;
+	PhongInfo phong;
 };
 
 

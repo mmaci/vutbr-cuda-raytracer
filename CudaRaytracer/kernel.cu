@@ -28,7 +28,7 @@ void checkCUDAError()
 
 
 __device__ HitInfo Intersect(const Ray &ray,  Plane* p,  Sphere* s, SceneStats* sceneStats){
-	
+
 	HitInfo hitInfo;
 	int i;
 	float st,pt;
@@ -54,7 +54,6 @@ __device__ HitInfo Intersect(const Ray &ray,  Plane* p,  Sphere* s, SceneStats* 
 	{ 
 		//t = 0.f;
 		hitInfo.hit = false;
-		hitInfo.color = Color(0,0,0);
 		return hitInfo;
 		//return false;
 	} else if (pt > st) //plane hit
@@ -62,13 +61,13 @@ __device__ HitInfo Intersect(const Ray &ray,  Plane* p,  Sphere* s, SceneStats* 
 		hitInfo.point = ray.getPoint(pt);
 		hitInfo.normal = p[maxPi].normal;
 		//t = pt;
-		hitInfo.color = p[maxPi].color;
+		hitInfo.phongInfo = p[maxPi].phong;
 	}else if (st >= pt) //sphere hit
 	{
 		hitInfo.point = ray.getPoint(st);
 		hitInfo.normal = s[maxSi].getNormal(hitInfo.point);
 		//t = st;
-		hitInfo.color = s[maxSi].color;
+		hitInfo.phongInfo = s[maxSi].phong;
 
 	}
 	hitInfo.hit = true;
@@ -76,17 +75,48 @@ __device__ HitInfo Intersect(const Ray &ray,  Plane* p,  Sphere* s, SceneStats* 
 	//return true;
 }
 
-__device__ Color TraceRay(const Ray &ray,  Plane* p,  Sphere* s, PointLight &light,SceneStats* sceneStats, int recursion)
+__device__ Color TraceRay(const Ray &ray,  Plane* p,  Sphere* s, PointLight &light, SceneStats* sceneStats, int recursion)
 {
-	float st = s[0].intersect(ray);
-	float pt = p[0].intersect(ray);
+	Color color(0,0,0);
+
 
 	HitInfo hitInfo=Intersect(ray,p,s,sceneStats);
 	if (hitInfo.hit){
-		return hitInfo.color;
+		color = hitInfo.phongInfo.ambient;
+		//light
+		Ray sray = light.getShadowRay(hitInfo.point);
+		sray.ShiftStart();
+		HitInfo sHit = Intersect(sray,p,s,sceneStats);
+		if (sHit.hit) {
+			float3 lv = sray.direction;
+			lv = CUDA::normalize(lv);
+			color.accumulate(mult(hitInfo.phongInfo.diffuse,light.color),fabs(CUDA::dot(lv,hitInfo.normal)));
+			if (hitInfo.phongInfo.shininess != 0) {
+				float3 rlv = float3_sub(
+					CUDA::cross(
+					float3_mult(2.f,
+					CUDA::cross(lv,hitInfo.normal)), hitInfo.normal) , lv);
+				float3 vv = ray.direction;
+				vv = CUDA::normalize(vv);
+				float specular = 0.f-CUDA::dot(rlv,vv);
+				if (specular > 0) {
+					color.accumulate(mult(hitInfo.phongInfo.specular, light.color), pow(specular, hitInfo.phongInfo.shininess));
+				}
+			}
+
+		}
+		//reflected ray
+		if (hitInfo.phongInfo.reflectance && recursion > 0) {
+			Ray rray(hitInfo.point, float3_sub(ray.direction, CUDA::cross(float3_mult(2,CUDA::cross(ray.direction,hitInfo.normal)) ,hitInfo.normal)));
+			rray.ShiftStart(1e-5);
+			//Color rcolor = TraceRay(rray, p,s, light,sceneStats, recursion-1);
+			//        color *= 1-phong.GetReflectance();
+			//color.accumulate(rcolor, hitInfo.phongInfo.reflectance);
+		}
+		return color;
 	}else
 	{
-		return Color();
+		return Color(0,0,0);
 	}
 
 }	
@@ -110,13 +140,17 @@ __global__ void RTKernel(uchar4* data, uint32 width, uint32 height, Sphere* sphe
 
 	Ray ray = camera->getRay(x,y);
 
-	PointLight l(make_float3(8.f, 10.f, 2.f),Color(0,255.f,0));
+	PointLight l(make_float3(-4.f, -5.f, 2.f),Color(0.5,0.5,0.5));
 	//Color c = TraceRay(ray,scene,l,15);
 	Color c = TraceRay(ray, planes, spheres, l,sceneStats, 15);
-	data[WINDOW_WIDTH * Y + X].x = c.red;
-	data[WINDOW_WIDTH * Y + X].y = c.green;
-	data[WINDOW_WIDTH * Y + X].z = c.blue;
+	data[WINDOW_WIDTH * Y + X].x = min(c.red*255.f,255.f);
+	data[WINDOW_WIDTH * Y + X].y = min(c.green*255.f,255.f);
+	data[WINDOW_WIDTH * Y + X].z = min(c.blue*255.f,255.f);
 	data[WINDOW_WIDTH * Y + X].w = 0;
+	/*data[WINDOW_WIDTH * Y + X].x = c.red*255.f;
+	data[WINDOW_WIDTH * Y + X].y = c.green*255.f ;
+	data[WINDOW_WIDTH * Y + X].z = c.blue*255.f ;
+	data[WINDOW_WIDTH * Y + X].w = 0;*/
 
 }
 

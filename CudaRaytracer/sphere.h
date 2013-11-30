@@ -1,7 +1,7 @@
 #ifndef SPHERE_H
 #define SPHERE_H
 
-#include "color.h"
+#include "phong.h"
 
 #include "mathematics.h"
 
@@ -11,8 +11,8 @@ struct Sphere
 {
 	Sphere()
 	{}
-	Sphere(float3 const& ce, float const& r, Color c) :
-		color(c), center(ce), radius(r)
+	Sphere(float3 const& ce, float const& r, PhongInfo p) :
+		phong(p), center(ce), radius(r)
 	{}
 		
 	__device__ float intersect(Ray const& ray) {
@@ -42,7 +42,7 @@ struct Sphere
 
 	float3 center;
 	float radius;
-	Color color;
+	PhongInfo phong;
 };
 
 
