@@ -1,38 +1,32 @@
 #ifndef PLANE_H
 #define PLANE_H
 
-#include <vector_types.h>
-#include "mathematics.h"
-#include "color.h"
+struct Plane
+{
+	Plane(float3 n, float3 point, Color c)	
+		: color(c), normal(n)
+	{				
+		normalize(normal);
+		d = 1.f * dot(normal, point);
+	}
 
-namespace CUDA {
+	__device__ float intersect(Ray const& ray) {
+		float np = CUDA::dot(normal, ray.direction);
 
-		struct Plane
-		{
-			__device__ Plane(float3 n, float3 point, Color c)	
-				: color(c), normal(n)
-			{				
-				math::normalize(normal);
-				d = 1.f * math::dot(normal, point);
+		if (np != 0) {
+			float t = -1.f * (d * CUDA::dot(normal, ray.origin)) / np;
+			if (t > 0) {
+				return t;
 			}
+		}
+		return 0;
+	}			
 
-			__device__ float intersect(Ray const& ray) {
-				float np = math::dot(normal, ray.direction);
+	float3 normal;
+	float d;
+	Color color;
+};
 
-				if (np != 0) {
-					float t = -1.f * (d * math::dot(normal, ray.origin)) / np;
-					if (t > 0) {
-						return t;
-					}
-				}
-				return 0;
-			}			
 
-			float3 normal;
-			float d;
-			Color color;
-		};
-
-}
 
 #endif

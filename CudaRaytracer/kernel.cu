@@ -37,10 +37,10 @@ void checkCUDAError()
 	
 
 
-__device__ Color TraceRay(const Ray &ray,  Plane &p,  Sphere &s, PointLight &light, int recursion)
+__device__ Color TraceRay(const Ray &ray,  Plane* p,  Sphere* s, PointLight &light, int recursion)
 {
-	float st = s.intersect(ray);
-	float pt = p.intersect(ray);
+	float st = s[0].intersect(ray);
+	float pt = p[0].intersect(ray);
 	float3 point;
 	float3 normal;
 	
@@ -49,14 +49,14 @@ __device__ Color TraceRay(const Ray &ray,  Plane &p,  Sphere &s, PointLight &lig
 	} else if (pt > st) //plane hit
 	{
 		point = ray.getPoint(pt);
-		normal = p.normal;
-		return p.color;
+		normal = p[0].normal;
+		return p[0].color;
 
 	} else if (st >= pt) //sphere hit
 	{
 		point = ray.getPoint(st);
-		normal = s.getNormal(point);
-		return s.color;
+		normal = s[0].getNormal(point);
+		return s[0].color;
 	};
 
 	return Color();
@@ -70,7 +70,7 @@ __device__ Color TraceRay(const Ray &ray,  Plane &p,  Sphere &s, PointLight &lig
  * @param uint32 height
  * @param float time
  */
-__global__ void RTKernel(uchar4* data, uint32 width, uint32 height)
+__global__ void RTKernel(uchar4* data, uint32 width, uint32 height, Sphere* spheres, Plane* planes, Camera* camera)
 {
 	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x;
 	uint32 Y = (blockIdx.y * blockDim.y) + threadIdx.y;
@@ -78,24 +78,19 @@ __global__ void RTKernel(uchar4* data, uint32 width, uint32 height)
 	float x = (2.f*X/WINDOW_WIDTH - 1.f);
 	float y = (2.f*Y/WINDOW_HEIGHT - 1.f);
 
-	Camera cam;	
-	cam.lookAt(make_float3(2, 3, -7),  // eye
-             make_float3(5, 0, 1),   // target
-             make_float3(0, 1, 0),   // sky
-             30, (float)WINDOW_WIDTH/WINDOW_HEIGHT);
-	Ray ray = cam.getRay(x,y);
-	Scene scene;
+	
+	Ray ray = camera->getRay(x,y);
+	
 
 	//scene.Add(Sphere(make_float3(8.f, 4.f, 0.f), 2.f,Color(255.f,0,0)));
 	//scene.Add(Plane(make_float3(10, 50, 100), make_float3(5.f, 0.f, 0.f),Color(0,0,255.f)));
-	Sphere s(make_float3(8.f, 4.f, 0.f), 2.f,Color(255.f,0,0));		
-	Plane p(make_float3(10, 50, 100), make_float3(5.f, 0.f, 0.f),Color(0,0,255.f));
+	
     //scene.Add(s);
 	//scene.Add(p);
 
 	PointLight l(make_float3(8.f, 10.f, 2.f),Color(0,255.f,0));
 	//Color c = TraceRay(ray,scene,l,15);
-	Color c = TraceRay(ray,p,s,l,15);
+	Color c = TraceRay(ray, planes, spheres, l, 15);
 	data[WINDOW_WIDTH * Y + X].x = c.red;
 	data[WINDOW_WIDTH * Y + X].y = c.green;
 	data[WINDOW_WIDTH * Y + X].z = c.blue;
@@ -112,12 +107,12 @@ __global__ void RTKernel(uchar4* data, uint32 width, uint32 height)
  * @param uint32 height
  * @param float time
  */
-extern "C" void launchRTKernel(uchar4* data, uint32 imageWidth, uint32 imageHeight)
+extern "C" void launchRTKernel(uchar4* data, uint32 imageWidth, uint32 imageHeight, Sphere* spheres, Plane* planes, Camera* camera)
 {   	
 	dim3 threadsPerBlock(8, 8, 1); // 64 threads ~ 8*8
 	dim3 numBlocks(WINDOW_WIDTH / threadsPerBlock.x, WINDOW_HEIGHT / threadsPerBlock.y);
 
-	RTKernel<<<numBlocks, threadsPerBlock>>>(data, imageWidth, imageHeight);
+	RTKernel<<<numBlocks, threadsPerBlock>>>(data, imageWidth, imageHeight, spheres, planes, camera);
    	
 	cudaThreadSynchronize();
 	checkCUDAError();

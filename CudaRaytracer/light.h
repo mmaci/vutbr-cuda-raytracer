@@ -1,11 +1,6 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
-#include "ray.h"
-#include "color.h"
-#include <vector_types.h>
-
-
 namespace CUDA
 {
 	struct PointLight

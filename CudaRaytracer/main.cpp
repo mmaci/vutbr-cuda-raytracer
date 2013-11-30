@@ -11,7 +11,16 @@
 #include <glut.h>
 #include <cuda_gl_interop.h>
 
-extern "C" void launchRTKernel(uchar4* , uint32, uint32);
+#include "mathematics.h"
+
+#include "scene.h"
+#include "sphere.h"
+#include "plane.h"
+#include "camera.h"
+
+Sphere* devSpheres;
+Plane* devPlanes;
+Camera* devCamera;
 
 /** @var GLuint pixel buffer object */
 GLuint PBO;
@@ -24,6 +33,8 @@ cudaGraphicsResource_t cudaResourceBuffer;
 
 /** @var cudaGraphicsResource_t cuda texture resource */
 cudaGraphicsResource_t cudaResourceTexture;
+
+extern "C" void launchRTKernel(uchar4* , uint32, uint32, Sphere*, Plane*, Camera*);
 
 /**
  * 1. Maps the the PBO (Pixel Buffer Object) to a data pointer
@@ -39,7 +50,7 @@ void runCuda()
 	// cudaGraphicsMapResources(1, &cudaResourceTexture, 0);
 	cudaGraphicsResourceGetMappedPointer((void **)&data, &numBytes, cudaResourceBuffer);
    
-	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT);
+	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT, devSpheres, devPlanes, devCamera);
 
 	cudaGraphicsUnmapResources(1, &cudaResourceBuffer, 0);
 	// cudaGraphicsUnmapResources(1, &cudaResourceTexture, 0);	
@@ -104,6 +115,27 @@ void initCuda(int argc, char** argv)
 	runCuda();
 }
 
+void initScene(Scene* scene) {
+	
+	Sphere s(make_float3(8.f, 4.f, 0.f), 2.f,Color(255.f,0,0));
+	scene->add(s);
+	Plane p(make_float3(10, 50, 100), make_float3(5.f, 0.f, 0.f),Color(0,0,255.f));
+	scene->add(p);
+	
+	scene->getCamera()->lookAt(make_float3(2.f, 3.f, -7.f),  // eye
+        make_float3(5.f, 0.f, 1.f),   // target
+        make_float3(0.f, 1.f, 0.f),   // sky
+        30, (float)WINDOW_WIDTH/WINDOW_HEIGHT);
+	
+	cudaMalloc((void***) &devSpheres, scene->getSphereCount() * sizeof(Sphere));
+	cudaMalloc((void***) &devPlanes, scene->getPlaneCount() * sizeof(Plane));
+	cudaMalloc((void***) &devCamera, sizeof(Camera));
+
+	cudaMemcpy(devPlanes, scene->getPlanes(), scene->getPlaneCount() * sizeof(Plane), cudaMemcpyHostToDevice);
+	cudaMemcpy(devSpheres, scene->getSpheres(), scene->getSphereCount() * sizeof(Sphere), cudaMemcpyHostToDevice);
+	cudaMemcpy(devCamera, scene->getCamera(), sizeof(Camera), cudaMemcpyHostToDevice);
+}
+
 /**
  * Initializes the OpenGL part of the app
  *
@@ -147,7 +179,12 @@ void initGL(int argc, char** argv)
 int main(int argc, char** argv)
 {	 
 	initGL(argc, argv);
+	Scene s;
+	initScene(&s);
+
 	initCuda(argc, argv);  
+
+	
    
 	glutDisplayFunc(display);
 	glutMainLoop();
