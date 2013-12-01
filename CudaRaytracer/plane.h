@@ -12,16 +12,19 @@ struct Plane
 		d = 1.f * dot(normal, point);
 	}
 
-	__device__ float intersect(Ray const& ray) {
+	__device__ HitInfo intersect(Ray const& ray) {
 		float np = CUDA::dot(normal, ray.direction);
-
+		HitInfo hit;
 		if (np != 0) {
 			float t = -1.f * (d * CUDA::dot(normal, ray.origin)) / np;
 			if (t > 0) {
-				return t;
+				hit.hit = true;
+				hit.t = t;
+				return hit;
 			}
 		}
-		return 0;
+		hit.hit = false;
+		return hit;
 	}			
 
 	float3 normal;

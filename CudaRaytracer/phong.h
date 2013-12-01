@@ -20,6 +20,7 @@ struct PhongInfo
 
 struct HitInfo {
 	bool hit;
+	float t;
 	float3 point;
 	float3 normal;
 	PhongInfo phongInfo;

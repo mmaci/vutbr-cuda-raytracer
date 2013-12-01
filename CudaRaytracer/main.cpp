@@ -119,17 +119,17 @@ void initCuda(int argc, char** argv)
 
 void initScene(Scene* scene) {
 
-	PhongInfo matBlue(Color(0.f, 0.f, 1.f),Color(1.f, 1.f, 1.f),Color(0.15, 0.1, 0.1),0);
-	PhongInfo matRed(Color(1.f, 0.f, 0.f), Color(1.f, 1.f, 1.f), Color(0.1, 0.05, 0.05), 15);
-	PhongInfo matGreen(Color(0.f, 1.f, 0.f), Color(1.f, 1.f, 1.f), Color(0.25, 0, 0), 5);
+	PhongInfo matBlue(Color(0.f, 0.f, 1.f),Color(1.f, 1.f, 1.f),Color(0.15, 0.1, 0.1),5);
+	PhongInfo matRed(Color(1.f, 0.f, 0.f), Color(1.f, 1.f, 1.f), Color(0.1, 0.05, 0.05), 1);
+	PhongInfo matGreen(Color(0.f, 1.f, 0.f), Color(1.f, 1.f, 1.f), Color(0.25, 0, 0), 5,0.1);
 
 
-	Sphere s(make_float3(8.f, 4.f, 0.f), 2.f,matRed);
+	Sphere s(make_float3(8.f, -4.f, 0.f), 2.f,matRed);
 	scene->add(s);
-	Sphere s1(make_float3(4.f, -5.f, 4.f), 4.f,matGreen);
+	Sphere s1(make_float3(4.f, 0.f, 4.f), 4.f,matGreen);
 	scene->add(s1);
 
-	Plane p(make_float3(1.f, 5.f, 10.f), make_float3(5.f, 0.f, 0.f),matBlue);
+	Plane p(make_float3(7.f, 10.f, -10.f), make_float3(5.f, 0.f, 0.f),matBlue);
 	scene->add(p);
 
 	scene->getCamera()->lookAt(make_float3(2.f, 3.f, -7.f),  // eye
