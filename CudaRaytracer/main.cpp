@@ -123,19 +123,20 @@ void initScene(Scene* scene) {
 	PhongInfo matBlue(Color(0.f, 0.f, 1.f),Color(1.f, 1.f, 1.f), Color(0.15, 0.1, 0.1),5);
 	PhongInfo matRed(Color(1.f, 0.f, 0.f), Color(1.f, 1.f, 1.f), Color(0.1, 0.05, 0.05), 15);
 	PhongInfo matGreen(Color(0.f, 1.f, 0.f), Color(1.f, 1.f, 1.f), Color(0.25, 0, 0), 20,0.1);
+	PhongInfo matYellow(Color(1, 1, 0), Color(1, 1, 1), Color(0.15, 0.1, 0.1), 15);
 
 
-  scene->add(Sphere(make_float3(-1.7, 4, 0), 1.6, matRed));
-  scene->add(Sphere(make_float3(1.7, 4, 0), 1.6, matRed));
+	scene->add(Sphere(make_float3(-1.7, 4, 0), 1.6, matRed));
+	scene->add(Sphere(make_float3(1.7, 4, 0), 1.6, matRed));
 
-  scene->add(Plane(make_float3(0, 0, 1), make_float3(0, 0, 15), matBlue)); // vzadu
-  scene->add(Plane(make_float3(0, 1, 0), make_float3(0, -1.5, 0), matBlue)); // podlaha
-  scene->add(Plane(make_float3(1, 0, 0), make_float3(-10, 0, 0), matBlue)); // leva strana
-  scene->add(Plane(make_float3(-1, 0, 0), make_float3(10, 0, 0), matBlue)); // prava strana
+	scene->add(Plane(make_float3(0, 0, 1), make_float3(0, 0, 15), matBlue)); // vzadu
+	scene->add(Plane(make_float3(0, 1, 0), make_float3(0, -1.5, 0), matRed)); // podlaha
+	scene->add(Plane(make_float3(1, 0, 0), make_float3(-10, 0, 0), matGreen)); // leva strana
+	scene->add(Plane(make_float3(-1, 0, 0), make_float3(10, 0, 0), matYellow)); // prava strana
 
 
-  scene->add(PointLight(make_float3(-2, 10, -15), Color(1, 1, 1)));
-  //scene->add(PointLight(make_float3(0, 10, 0), Color(1, 1, 1)));
+	scene->add(PointLight(make_float3(-2, 10, -15), Color(1, 1, 1)));
+	//scene->add(PointLight(make_float3(0, 10, 0), Color(1, 1, 1)));
 
 	/*Sphere s(make_float3(8.f, -4.f, 0.f), 2.f, matRed);
 	scene->add(s);
