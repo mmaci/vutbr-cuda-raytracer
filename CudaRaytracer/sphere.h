@@ -43,7 +43,7 @@ struct Sphere
 
 	__device__ float3 getNormal(float3 const& position) const {
 		float3 n = CUDA::float3_sub(position, center);
-		CUDA::normalize(n);
+		n = CUDA::normalize(n);
 		return n;
 	}
 

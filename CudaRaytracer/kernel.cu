@@ -92,12 +92,13 @@ __device__ Color TraceRay(const Ray &ray,  Plane* planes, Sphere* spheres, Point
 	HitInfo hitInfo = intersectRayWithScene(ray, planes, spheres, sceneStats);
 	if (hitInfo.hit)
 	{
-
+		color = hitInfo.phongInfo.ambient;
+		PhongInfo phongInfo = hitInfo.phongInfo;
+		const float3 hitPoint = hitInfo.point;		
+		const float3 hitNormal = hitInfo.normal;
 		for (uint32 i = 0; i < sceneStats->lightCount; ++i)
 		{	
-			PhongInfo phongInfo = hitInfo.phongInfo;
-			const float3 hitPoint = CUDA::float3_add(ray.origin, CUDA::float3_mult(hitInfo.t, ray.direction));		
-			const float3 hitNormal = hitInfo.normal;
+
 			const float3 lightPos = lights[i].position;		
 			const float3 shadowDir = CUDA::normalize(CUDA::float3_sub(lightPos, hitPoint));
 
@@ -108,9 +109,11 @@ __device__ Color TraceRay(const Ray &ray,  Plane* planes, Sphere* spheres, Point
 
 				HitInfo shadowHit = intersectRayWithScene(lightRay, planes, spheres, sceneStats);
 
-				if ((shadowHit.hit) && (shadowHit.t < CUDA::length(CUDA::float3_sub(hitPoint, lightPos)) + 0.0001f)) {
-					color.accumulate(CUDA::mult(phongInfo.diffuse, lights[i].color), intensity);
-
+				if ((shadowHit.hit) && (fabs(shadowHit.t - CUDA::length(CUDA::float3_sub(hitPoint, lightPos))) < 0.0001f)) 
+				//if ((shadowHit.hit) && (shadowHit.t < CUDA::length(CUDA::float3_sub(hitPoint, lightPos)) + 0.0001f)) 
+				{
+				color.accumulate(CUDA::mult(phongInfo.diffuse, lights[i].color), fabs(intensity));
+				
 					if (phongInfo.shininess > 0.f) {
 						float3 shineDir = CUDA::float3_sub(shadowDir, CUDA::float3_mult(2.0f * CUDA::dot(shadowDir, hitNormal), hitNormal));
 						intensity = CUDA::dot(shineDir, ray.direction);				
