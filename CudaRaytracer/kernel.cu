@@ -114,19 +114,17 @@ __device__ Color TraceRay(const Ray &ray,  Plane* planes, Sphere* spheres, Point
 					color.accumulate(CUDA::mult(phongInfo.diffuse, lights[i].color), intensity);
 				}
 			}
-		}
-						
+											
 			
-			/*
-			if (phongInfo.shininess != 0.f) {
-				float3 rlv = float3_sub(CUDA::cross(float3_mult(2.f, CUDA::cross(lv,hitInfo.normal)), hitInfo.normal) , lv);
-				float3 vv = ray.direction;
-				vv = CUDA::normalize(vv);
-				float specular = -1.f * CUDA::dot(rlv, vv);
-				if (specular > 0) {
-					color.accumulate(mult(hitInfo.phongInfo.specular, light.color), pow(specular, hitInfo.phongInfo.shininess));
-				}
-			}*/		
+			if (phongInfo.shininess > 0.f) {
+				float3 shineDir = CUDA::float3_sub(shadowDir, (CUDA::float3_mult(2.0f * CUDA::dot(shadowDir, hitNormal), hitNormal)));
+				intensity = CUDA::dot(shineDir, ray.direction);				
+				intensity = pow(intensity, phongInfo.shininess);					
+				intensity = min(intensity, 10000.0f );
+
+				color.accumulate(mult(phongInfo.specular, lights[i].color), intensity);
+			}
+		}
 
 		//reflected ray
 		/*if ((hitInfo.phongInfo.reflectance>0) && (recursion > 0)) {
