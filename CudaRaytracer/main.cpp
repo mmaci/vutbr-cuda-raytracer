@@ -23,6 +23,7 @@ Sphere* devSpheres;
 Plane* devPlanes;
 Camera* devCamera;
 SceneStats* devSceneStats;
+PointLight* devLights;
 
 /** @var GLuint pixel buffer object */
 GLuint PBO;
@@ -36,7 +37,7 @@ cudaGraphicsResource_t cudaResourceBuffer;
 /** @var cudaGraphicsResource_t cuda texture resource */
 cudaGraphicsResource_t cudaResourceTexture;
 
-extern "C" void launchRTKernel(uchar4* , uint32, uint32, Sphere*, Plane*,SceneStats*, Camera*);
+extern "C" void launchRTKernel(uchar3* , uint32, uint32, Sphere*, Plane*, PointLight*, SceneStats*, Camera*);
 
 /**
 * 1. Maps the the PBO (Pixel Buffer Object) to a data pointer
@@ -45,14 +46,14 @@ extern "C" void launchRTKernel(uchar4* , uint32, uint32, Sphere*, Plane*,SceneSt
 */ 
 void runCuda()
 {	
-	uchar4* data;
+	uchar3* data;
 	size_t numBytes;
 
 	cudaGraphicsMapResources(1, &cudaResourceBuffer, 0);
 	// cudaGraphicsMapResources(1, &cudaResourceTexture, 0);
 	cudaGraphicsResourceGetMappedPointer((void **)&data, &numBytes, cudaResourceBuffer);
 
-	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT, devSpheres, devPlanes, devSceneStats, devCamera);
+	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT, devSpheres, devPlanes, devLights, devSceneStats, devCamera);
 
 	cudaGraphicsUnmapResources(1, &cudaResourceBuffer, 0);
 	// cudaGraphicsUnmapResources(1, &cudaResourceTexture, 0);	
@@ -72,7 +73,7 @@ void display()
 	// and draw everything
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, PBO);
 	glBindTexture(GL_TEXTURE_2D, textureId);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(0.0f,0.0f,0.0f);
@@ -93,7 +94,7 @@ void display()
 */
 void initCuda(int argc, char** argv)
 {	  	
-	int sizeData = sizeof(uchar4) * WINDOW_SIZE;
+	int sizeData = sizeof(uchar3) * WINDOW_SIZE;
 
 	// Generate, bind and register the Pixel Buffer Object (PBO)
 	glGenBuffers(1, &PBO);    
@@ -107,7 +108,7 @@ void initCuda(int argc, char** argv)
 	glEnable(GL_TEXTURE_2D);   
 	glGenTextures(1, &textureId);
 	glBindTexture(GL_TEXTURE_2D, textureId);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glBindTexture(GL_TEXTURE_2D, 0); // unbind
@@ -119,18 +120,21 @@ void initCuda(int argc, char** argv)
 
 void initScene(Scene* scene) {
 
-	PhongInfo matBlue(Color(0.f, 0.f, 1.f),Color(1.f, 1.f, 1.f),Color(0.15, 0.1, 0.1),5);
+	PhongInfo matBlue(Color(0.f, 0.f, 1.f),Color(1.f, 1.f, 1.f), Color(0.15, 0.1, 0.1),5);
 	PhongInfo matRed(Color(1.f, 0.f, 0.f), Color(1.f, 1.f, 1.f), Color(0.1, 0.05, 0.05), 1);
 	PhongInfo matGreen(Color(0.f, 1.f, 0.f), Color(1.f, 1.f, 1.f), Color(0.25, 0, 0), 5,0.1);
 
 
-	Sphere s(make_float3(8.f, -4.f, 0.f), 2.f,matRed);
+	Sphere s(make_float3(8.f, -4.f, 0.f), 2.f, matRed);
 	scene->add(s);
-	Sphere s1(make_float3(4.f, 0.f, 4.f), 4.f,matGreen);
-	scene->add(s1);
-
-	Plane p(make_float3(7.f, 10.f, -10.f), make_float3(5.f, 0.f, 0.f),matBlue);
+	Sphere s1(make_float3(4.f, 0.f, 4.f), 4.f, matGreen);
+	scene->add(s1);	
+	Plane p(make_float3(7.f, 10.f, -10.f), make_float3(5.f, 0.f, 0.f), matBlue);
 	scene->add(p);
+	PointLight l(make_float3(1.f, 5.f, 4.f), Color(1.f, 1.f, 1.f));
+	scene->add(l);
+	PointLight l2(make_float3(9.f, 10.f, 1.f), Color(1.f, 1.f, 1.f));
+	scene->add(l2);
 
 	scene->getCamera()->lookAt(make_float3(2.f, 3.f, -7.f),  // eye
 		make_float3(5.f, 0.f, 1.f),   // target
@@ -139,11 +143,13 @@ void initScene(Scene* scene) {
 
 	cudaMalloc((void***) &devSpheres, scene->getSphereCount() * sizeof(Sphere));
 	cudaMalloc((void***) &devPlanes, scene->getPlaneCount() * sizeof(Plane));
+	cudaMalloc((void***) &devLights, scene->getLightCount() * sizeof(PointLight));
 	cudaMalloc((void***) &devCamera, sizeof(Camera));
 	cudaMalloc((void***) &devSceneStats, sizeof(SceneStats));
 
 	cudaMemcpy(devPlanes, scene->getPlanes(), scene->getPlaneCount() * sizeof(Plane), cudaMemcpyHostToDevice);
 	cudaMemcpy(devSpheres, scene->getSpheres(), scene->getSphereCount() * sizeof(Sphere), cudaMemcpyHostToDevice);
+	cudaMemcpy(devLights, scene->getLights(), scene->getLightCount() * sizeof(PointLight), cudaMemcpyHostToDevice);
 	cudaMemcpy(devCamera, scene->getCamera(), sizeof(Camera), cudaMemcpyHostToDevice);
 	cudaMemcpy(devSceneStats, scene->getSceneStats() , sizeof(SceneStats), cudaMemcpyHostToDevice);
 }

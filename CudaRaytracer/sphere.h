@@ -11,8 +11,8 @@ struct Sphere
 {
 	Sphere()
 	{}
-	Sphere(float3 const& ce, float const& r, PhongInfo p) :
-		phong(p), center(ce), radius(r)
+	Sphere(float3 const& ce, float const& r, PhongInfo p) 
+		: phong(p), center(ce), radius(r)
 	{}
 		
 	__device__ HitInfo intersect(Ray const& ray) {

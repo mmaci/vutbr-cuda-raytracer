@@ -5,17 +5,18 @@
 
 struct PhongInfo
 {
-  Color diffuse;
-  Color specular;
-  Color ambient;
-  float shininess;
-  float reflectance;
-  PhongInfo(const Color &diff, const Color &spec, const Color &amb, float shin, float ref = 0.0) {
-    diffuse = diff; specular = spec; ambient = amb; shininess = shin;
-    reflectance = ref;
-  }
-  __device__ PhongInfo()
-  {};
+	PhongInfo(const Color &diff, const Color &spec, const Color &amb, float shin, float ref = 0.0)
+		: diffuse(diff), specular(spec), ambient(amb), shininess(shin), reflectance(ref)
+	{}
+
+	__device__ PhongInfo()
+	{};
+
+	Color diffuse;
+	Color specular;
+	Color ambient;
+	float shininess;
+	float reflectance;  
 };
 
 struct HitInfo {

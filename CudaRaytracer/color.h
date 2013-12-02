@@ -23,7 +23,7 @@ struct Color
 
 
 namespace CUDA{	
-	__device__ inline Color mult(const Color &a, const Color &b){ return Color(a.red*b.red, a.green*b.green, a.blue*b.blue); }
+	__device__ inline Color mult(const Color &a, const Color &b){ return Color(a.red*b.red, a.green*b.green, a.blue*b.blue); }	
 	__device__ inline float diff(const Color &a, const Color &b){
 		float rr = a.red - b.red;
 		float gg = a.green - b.green;
