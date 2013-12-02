@@ -30,6 +30,10 @@ namespace CUDA {
 
 		return vector;
 	}
+
+	__device__ inline float length(float3 const& vector) {
+		return sqrt((vector.x * vector.x) + (vector.y * vector.y) + (vector.z * vector.z));
+	}
 	
 }
 

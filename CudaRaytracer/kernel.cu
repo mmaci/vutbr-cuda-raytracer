@@ -108,7 +108,9 @@ __device__ Color TraceRay(const Ray &ray,  Plane* planes, Sphere* spheres, Point
 
 				HitInfo shadowHit = intersectRayWithScene(lightRay, planes, spheres, sceneStats);
 
-				if ((shadowHit.hit) && (shadowHit.t < hitInfo.t - FLT_EPSILON)) {
+
+
+				if ((shadowHit.hit) && (shadowHit.t < CUDA::length(CUDA::float3_sub(hitPoint, lightPos)) + 0.0001f)) {
 					color.accumulate(CUDA::mult(phongInfo.diffuse, lights[i].color), intensity);
 				}
 			}
