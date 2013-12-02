@@ -29,12 +29,12 @@ void checkCUDAError()
 __device__ HitInfo intersectRayWithScene(Ray const& ray,  Plane* planes,  Sphere* spheres, SceneStats* sceneStats)
 {
 	HitInfo hitInfo, hit;
-	
+
 	float st = FLT_MAX;
 	float pt = FLT_MAX;
 	int maxPi = NO_HIT;
 	int maxSi = NO_HIT;
-		
+
 	uint32 i;
 	// SPHERES
 	for (i = 0; i < sceneStats->sphereCount; ++i)
@@ -100,44 +100,44 @@ __device__ Color TraceRay(const Ray &ray,  Plane* planes, Sphere* spheres, Point
 		{	
 
 			const float3 lightPos = lights[i].position;		
-			const float3 shadowDir = CUDA::normalize(CUDA::float3_sub(lightPos, hitPoint));
-			//const float3 shadowDir = lights[i].getShadowRay(hitPoint).direction;
+			//const float3 shadowDir = CUDA::normalize(CUDA::float3_sub(lightPos, hitPoint));
+			const float3 shadowDir = lights[i].getShadowRay(hitPoint).direction;
 
 			float intensity = fabs(CUDA::dot(hitNormal, shadowDir));
 
-			if (true /*intensity > 0.f*/) { // only if there is enought light
-				Ray lightRay = Ray(lights[i].position, CUDA::float3_sub(hitPoint, lightPos));
+			//if (true /*intensity > 0.f*/) { // only if there is enought light
+			Ray lightRay = Ray(lights[i].position, CUDA::float3_sub(hitPoint, lightPos));
 
-				HitInfo shadowHit = intersectRayWithScene(lightRay, planes, spheres, sceneStats);
+			HitInfo shadowHit = intersectRayWithScene(lightRay, planes, spheres, sceneStats);
 
-				if ((shadowHit.hit) && (fabs(shadowHit.t - CUDA::length(CUDA::float3_sub(hitPoint, lightPos))) < 0.0001f)) 
+			if ((shadowHit.hit) && (fabs(shadowHit.t - CUDA::length(CUDA::float3_sub(hitPoint, lightPos))) < 0.0001f)) 
 				//if ((shadowHit.hit) && (shadowHit.t < CUDA::length(CUDA::float3_sub(hitPoint, lightPos)) + 0.0001f)) 
-				{
+			{
 				color.accumulate(CUDA::mult(phongInfo.diffuse, lights[i].color), intensity);
-				
-					if (phongInfo.shininess > 0.f) {
-						float3 shineDir = CUDA::float3_sub(shadowDir, CUDA::float3_mult(2.0f * CUDA::dot(shadowDir, hitNormal), hitNormal));
-						intensity = CUDA::dot(shineDir, ray.direction);				
-						intensity = pow(intensity, phongInfo.shininess);					
-						intensity = min(intensity, 10000.0f);
 
-						color.accumulate(mult(phongInfo.specular, lights[i].color), intensity);
-					}
+				if (phongInfo.shininess > 0.f) {
+					float3 shineDir = CUDA::float3_sub(shadowDir, CUDA::float3_mult(2.0f * CUDA::dot(shadowDir, hitNormal), hitNormal));
+					intensity = CUDA::dot(shineDir, ray.direction);				
+					intensity = pow(intensity, phongInfo.shininess);					
+					intensity = min(intensity, 10000.0f);
+
+					color.accumulate(mult(phongInfo.specular, lights[i].color), intensity);
 				}
 			}
+			//}
 		}
 
 		//reflected ray
 		/*if ((hitInfo.phongInfo.reflectance>0) && (recursion > 0)) {
-			Ray rray(hitInfo.point, float3_sub(ray.direction, CUDA::cross(float3_mult(2,CUDA::cross(ray.direction,hitInfo.normal)) ,hitInfo.normal)));
-			rray.ShiftStart(1e-5);
+		Ray rray(hitInfo.point, float3_sub(ray.direction, CUDA::cross(float3_mult(2,CUDA::cross(ray.direction,hitInfo.normal)) ,hitInfo.normal)));
+		rray.ShiftStart(1e-5);
 
-			//Color rcolor = TraceRay(rray, p,s, light,sceneStats, recursion-1);
-			//        color *= 1-phong.GetReflectance();
-			//color.accumulate(rcolor, hitInfo.phongInfo.reflectance);
+		//Color rcolor = TraceRay(rray, p,s, light,sceneStats, recursion-1);
+		//        color *= 1-phong.GetReflectance();
+		//color.accumulate(rcolor, hitInfo.phongInfo.reflectance);
 		}*/		
 	}
-	
+
 	return color;
 }	
 
@@ -161,7 +161,7 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height, Sphere* sphe
 	//float dy = 2.0/height;
 
 	Ray ray = camera->getRay(x,y);
-	
+
 	//Color c = TraceRay(ray,scene,l,15);
 	Color c = TraceRay(ray, planes, spheres, lights, sceneStats, 5);
 

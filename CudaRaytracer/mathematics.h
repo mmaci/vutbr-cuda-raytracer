@@ -98,7 +98,7 @@ namespace CUDA {
 		return make_float3(l.x + r.x, l.y + r.y, l.z + r.z);	
 	}
 
-	__device__ inline float3 float3_add (float3 const& n1, float3 const& n2, float3 n3)
+	__device__ inline float3 float3_add (float3 const& n1, float3 const& n2, float3 const& n3)
 	{ 
 		return make_float3(n1.x + n2.x + n3.x, n1.y + n2.y + n3.y, n1.z + n2.z + n3.z);	
 	}
