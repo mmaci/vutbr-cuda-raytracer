@@ -19,6 +19,8 @@
 #include "camera.h"
 #include "phong.h"
 
+#include <chrono>
+
 Sphere* devSpheres;
 Plane* devPlanes;
 Camera* devCamera;
@@ -39,13 +41,17 @@ cudaGraphicsResource_t cudaResourceTexture;
 
 extern "C" void launchRTKernel(uchar3* , uint32, uint32, Sphere*, Plane*, PointLight*, SceneStats*, Camera*);
 
+float deltaTime = 0.0f;
+float fps = 0.0f;
+float delta;
+
 /**
 * 1. Maps the the PBO (Pixel Buffer Object) to a data pointer
 * 2. Launches the kernel
 * 3. Unmaps the PBO
 */ 
 void runCuda()
-{	
+{		
 	uchar3* data;
 	size_t numBytes;
 
@@ -53,7 +59,7 @@ void runCuda()
 	// cudaGraphicsMapResources(1, &cudaResourceTexture, 0);
 	cudaGraphicsResourceGetMappedPointer((void **)&data, &numBytes, cudaResourceBuffer);
 
-	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT, devSpheres, devPlanes, devLights, devSceneStats, devCamera);
+	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT, devSpheres, devPlanes, devLights, devSceneStats, devCamera);		
 
 	cudaGraphicsUnmapResources(1, &cudaResourceBuffer, 0);
 	// cudaGraphicsUnmapResources(1, &cudaResourceTexture, 0);	
@@ -65,6 +71,8 @@ void runCuda()
 */
 void display()
 {
+	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	// run the Kernel
@@ -84,6 +92,16 @@ void display()
 
 	glutSwapBuffers();
 	glutPostRedisplay();  
+
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+	float delta = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0f;
+
+	deltaTime += delta;
+	deltaTime /= 2.0f;
+	fps = 1.0f / deltaTime;
+
+	std::cout << std::fixed << fps << std::endl;
 }
 
 /**
@@ -149,7 +167,7 @@ void initScene(Scene* scene) {
 	PointLight l2(make_float3(9.f, 10.f, 1.f), Color(1.f, 1.f, 1.f));
 	scene->add(l2);*/
 
-	scene->getCamera()->lookAt(make_float3(2.f, 3.f, -7.f),  // eye
+	scene->getCamera()->lookAt(make_float3(3.f, 3.f, -7.f),  // eye
 		make_float3(0.f, 0.f, 1.f),   // target
 		make_float3(0.f, 1.f, 0.f),   // sky
 		30, (float)WINDOW_WIDTH/WINDOW_HEIGHT);
