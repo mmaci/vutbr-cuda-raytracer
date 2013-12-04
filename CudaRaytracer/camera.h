@@ -3,9 +3,13 @@
 
 struct Camera {
 
-	Camera() : 
-		position(make_float3(0.f, 0.f, 0.f)), direction(make_float3(0.f, 0.f, 1.f)), right(make_float3(1.f, 0.f, 0.f)), up(make_float3(0.f, 1.f, 0.f))
-	{}
+	void init()
+	{		 
+		position = make_float3(0.f, 0.f, 0.f);
+		direction = make_float3(0.f, 0.f, 1.f);
+		right = make_float3(1.f, 0.f, 0.f);
+		up = make_float3(0.f, 1.f, 0.f);
+	}
 
 	void lookAt(float3 const& eye, float3 const& target, float3 const& sky, float const& fov, float const& ratio) {
 		position = eye;	

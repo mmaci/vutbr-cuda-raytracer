@@ -22,4 +22,17 @@ const uint32 NUM_THREADS = 256;
 #define M_PI_2 1.57079632679489661923
 #define NO_HIT -1
 
+enum Materials {
+	MATERIAL_BLUE = 0,
+	MATERIAL_RED,
+	MATERIAL_GREEN,
+	MATERIAL_YELLOW,
+
+	NUM_MATERIALS
+};
+
+#define NUM_PLANES 4
+#define NUM_SPHERES 2
+#define NUM_LIGHTS 1
+
 #endif

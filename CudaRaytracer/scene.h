@@ -23,11 +23,14 @@ public:
 	void add(Sphere s) { spheres.push_back(s); }
 	void add(Plane p){ planes.push_back(p); }
 	void add(PointLight p){ lights.push_back(p); }
+	void add(PhongMaterial mat) { materials.push_back(mat); }
 
 	Camera* getCamera() { return &camera; }
 	Sphere* getSpheres() { return &spheres[0]; }
 	Plane* getPlanes() { return &planes[0];	}
 	PointLight* getLights() { return &lights[0]; }
+	PhongMaterial* getMaterials() { return &materials[0]; }
+
 	SceneStats* getSceneStats(){
 		sceneStats.planeCount = planes.size();
 		sceneStats.sphereCount = spheres.size();
@@ -36,6 +39,7 @@ public:
 	};
 
 private:
+	std::vector<PhongMaterial> materials;
 	std::vector<Sphere> spheres;
 	std::vector<Plane> planes;
 	std::vector<PointLight> lights;

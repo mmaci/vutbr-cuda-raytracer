@@ -5,10 +5,10 @@
 
 struct Plane
 {
-	Plane(float3 n, float3 point, PhongInfo p)	
-		: phong(p), normal(n)
-	{				
-		normal = normalize(normal);
+	void set(float3 n, float3 point, uint32 matId)			
+	{		
+		materialId = matId;		
+		normal = normalize(n);
 		d = -1.f * dot(normal, point);
 	}
 
@@ -30,7 +30,7 @@ struct Plane
 
 	float3 normal;
 	float d;
-	PhongInfo phong;
+	uint32 materialId;
 };
 
 
