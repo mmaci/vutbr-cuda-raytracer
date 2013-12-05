@@ -153,54 +153,51 @@ __device__ Color TraceRay(const Ray &ray, int recursion)
 * @param uint32 height
 * @param float time
 */
+
+
 __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 {
+	__shared__ Color presampled[64];
+
 	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x;
 	uint32 Y = (blockIdx.y * blockDim.y) + threadIdx.y;
 
-	float x = (2.f*X/WINDOW_WIDTH - 1.f);
-	float y = (2.f*Y/WINDOW_HEIGHT - 1.f);
+	float x = (2.f*SUB_CONST*X/WINDOW_WIDTH - 1.f);
+	float y = (2.f*SUB_CONST*Y/WINDOW_HEIGHT - 1.f);
 
-	//float dx = 2.0/width;
-	//float dy = 2.0/height;
-
-	
-
-	//Color c = TraceRay(ray,scene,l,15);
 	Color c = TraceRay(cst_camera.getRay(x, y), 5);
 
+	uint32 spos = threadIdx.x + (threadIdx.y * 8);
+		
+	presampled[spos].red = c.red;
+	presampled[spos].green = c.green;
+	presampled[spos].blue = c.blue;	
 
-	//tohle pak asi pryc
-	/*Color cl(data[WINDOW_WIDTH * Y + X-1].x/255.f,data[WINDOW_WIDTH * Y + X-1].y/255.f,data[WINDOW_WIDTH * Y + X-1].z/255.f);
-	Color ct(data[(WINDOW_WIDTH-1) * Y + X-1].x/255.f,data[(WINDOW_WIDTH-1)  * Y + X-1].y/255.f,data[(WINDOW_WIDTH-1)  * Y + X-1].z/255.f);
-	const float thresh = -5.0001;
-	if (diff(c, cl) > thresh || diff(c, ct) > thresh) {
-	//          cout << diff(c, cl) << "  " << diff(c, ct) << endl;
-	Color cc;      
-	ray = camera->getRay(x - dx/3, y - dy/3);
-	cc = TraceRay(ray,planes, spheres, l,sceneStats, 15);
-	c.accumulate(cc, 0.6);
-	ray = camera->getRay(x - dx/3, y + dy/3);
-	cc = TraceRay(ray, planes, spheres, l,sceneStats, 15);
-	c.accumulate(cc, 0.6);
-	ray = camera->getRay(x + dx/3, y - dy/3);
-	cc = TraceRay(ray,planes, spheres, l,sceneStats, 15);
-	c.accumulate(cc, 0.6);
-	ray = camera->getRay(x + dx/3, y + dy/3);
-	cc = TraceRay(ray, planes, spheres, l,sceneStats, 15);
-	c.accumulate(cc, 0.6);
+	__syncthreads();
 
-	c *= 1/(1 + 4*0.6);
-	}*/
+	uint32 pos = WINDOW_WIDTH * Y * SUB_CONST + X * SUB_CONST;
 
-	data[WINDOW_WIDTH * Y + X].x = min(c.red* 255.f, 255.f);
-	data[WINDOW_WIDTH * Y + X].y = min(c.green* 255.f, 255.f);
-	data[WINDOW_WIDTH * Y + X].z = min(c.blue* 255.f, 255.f);	
-	/*data[WINDOW_WIDTH * Y + X].x = c.red*255.f;
-	data[WINDOW_WIDTH * Y + X].y = c.green*255.f ;
-	data[WINDOW_WIDTH * Y + X].z = c.blue*255.f ;
-	data[WINDOW_WIDTH * Y + X].w = 0;*/
+	Color c0 = presampled[spos];
+	Color c1 = presampled[min(63, spos+1)];
+	Color c2 = presampled[min(63, spos+8)];
+	Color c3 = presampled[min(63, spos+9)];
 
+	for (uint32 i = 0, float k = 0.f; i < SUB_CONST; ++i, k += 1 / SUB_CONST)
+	{
+		for (uint32 j = 0, float l = 0.f; j < SUB_CONST; ++j, l += 1 / SUB_CONST)
+		{
+			uint32 p = pos+i+j*WINDOW_WIDTH;
+
+			float w1 = (1-k) * (1-l);
+			float w2 = k * (1-l);
+			float w3 = (1-k) * l;
+			float w4 = k*l;
+		
+			data[p].x = min( ( w1 * c0.red + w2 * c1.red + w3 * c2.red + w4 * c3.red ) * 255.f, 255.f);
+			data[p].y = min( ( w1 * c0.green + w2 * c1.green + w3 * c2.green + w4 * c3.green ) * 255.f, 255.f);
+			data[p].z = min( ( w1 * c0.blue + w2 * c1.blue + w3 * c2.blue + w4 * c3.blue ) * 255.f, 255.f);
+		}
+	}
 }
 
 
@@ -214,17 +211,19 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 */
 extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeight, Sphere* spheres, Plane* planes, PointLight* lights, PhongMaterial* materials, Camera* camera)
 {   	
-	dim3 threadsPerBlock(8, 8, 1); // 64 threads ~ 8*8
-	dim3 numBlocks(WINDOW_WIDTH / threadsPerBlock.x, WINDOW_HEIGHT / threadsPerBlock.y);
+	dim3 threadsPerBlock(8, 8, 1); // 64 threads ~ 8*8 -> based on this shared memory for sampling is allocated !!!
+
+	dim3 numBlocks(WINDOW_WIDTH / SUB_CONST / threadsPerBlock.x, WINDOW_HEIGHT / SUB_CONST / threadsPerBlock.y);
 	
 	cudaMemcpyToSymbol(cst_camera, camera, sizeof(Camera));
 	cudaMemcpyToSymbol(cst_spheres, spheres, NUM_SPHERES * sizeof(Sphere));
 	cudaMemcpyToSymbol(cst_planes, planes, NUM_PLANES * sizeof(Plane));
 	cudaMemcpyToSymbol(cst_lights, lights, NUM_LIGHTS * sizeof(PointLight));
-	cudaMemcpyToSymbol(cst_materials, materials, NUM_MATERIALS * sizeof(PhongMaterial));
+	cudaMemcpyToSymbol(cst_materials, materials, NUM_MATERIALS * sizeof(PhongMaterial));	
 
 	RTKernel<<<numBlocks, threadsPerBlock>>>(data, imageWidth, imageHeight);
-
 	cudaThreadSynchronize();
-	checkCUDAError();
+	
+
+	checkCUDAError();		
 }

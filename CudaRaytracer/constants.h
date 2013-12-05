@@ -12,8 +12,8 @@ typedef int int32;
 
 const char APP_NAME[] = "Ray Tracer";
 
-const uint32 WINDOW_WIDTH = 800;
-const uint32 WINDOW_HEIGHT = 600;
+const uint32 WINDOW_WIDTH = 1920;
+const uint32 WINDOW_HEIGHT = 1080;
 const float WINDOW_ASPECT = WINDOW_WIDTH / WINDOW_HEIGHT;
 const uint32 WINDOW_SIZE = WINDOW_WIDTH * WINDOW_HEIGHT;
 const uint32 NUM_THREADS = 256;
@@ -34,5 +34,7 @@ enum Materials {
 #define NUM_PLANES 4
 #define NUM_SPHERES 2
 #define NUM_LIGHTS 1
+
+#define SUB_CONST 4
 
 #endif
