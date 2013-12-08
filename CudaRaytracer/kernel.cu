@@ -98,11 +98,13 @@ __device__ Color TraceRay(const Ray &ray, int recursion)
 	HitInfo hitInfo = intersectRayWithScene(ray);
 	if (hitInfo.hit)
 	{				
+		const int matID = hitInfo.materialId;
+		color = cst_materials[matID].ambient;
 		const float3 hitPoint = hitInfo.point;		
 		const float3 hitNormal = hitInfo.normal;
 		for (uint32 i = 0; i < NUM_LIGHTS; ++i)
 		{	
-
+			
 			const float3 lightPos = cst_lights[i].position;		
 			//const float3 shadowDir = CUDA::normalize(CUDA::float3_sub(lightPos, hitPoint));
 			const float3 shadowDir = cst_lights[i].getShadowRay(hitPoint).direction;
@@ -119,27 +121,27 @@ __device__ Color TraceRay(const Ray &ray, int recursion)
 			{
 				color.accumulate(CUDA::mult(cst_materials[hitInfo.materialId].diffuse, cst_lights[i].color), intensity);
 
-				if (cst_materials[hitInfo.materialId].shininess > 0.f) {
+				if (cst_materials[matID].shininess > 0.f) {
 					float3 shineDir = CUDA::float3_sub(shadowDir, CUDA::float3_mult(2.0f * CUDA::dot(shadowDir, hitNormal), hitNormal));
 					intensity = CUDA::dot(shineDir, ray.direction);				
-					intensity = pow(intensity, cst_materials[hitInfo.materialId].shininess);					
+					intensity = pow(intensity, cst_materials[matID].shininess);					
 					intensity = min(intensity, 10000.0f);
 
-					color.accumulate(mult(cst_materials[hitInfo.materialId].specular, cst_lights[i].color), intensity);
+					color.accumulate(mult(cst_materials[matID].specular, cst_lights[i].color), intensity);
 				}
 			}
 			//}
 		}
-
 		//reflected ray
-		/*if ((hitInfo.phongInfo.reflectance>0) && (recursion > 0)) {
-		Ray rray(hitInfo.point, float3_sub(ray.direction, CUDA::cross(float3_mult(2,CUDA::cross(ray.direction,hitInfo.normal)) ,hitInfo.normal)));
-		rray.ShiftStart(1e-5);
+		if ((cst_materials[matID].reflectance>0) && (recursion > 0)) {
+			Ray rray(hitPoint, float3_sub(ray.direction, float3_mult(2*CUDA::dot(ray.direction,hitInfo.normal) ,hitInfo.normal)));
+			rray.ShiftStart(1e-5);
 
-		//Color rcolor = TraceRay(rray, p,s, light,sceneStats, recursion-1);
-		//        color *= 1-phong.GetReflectance();
-		//color.accumulate(rcolor, hitInfo.phongInfo.reflectance);
-		}*/		
+
+			Color rcolor = TraceRay(rray, recursion-1);
+			//        color *= 1-phong.GetReflectance();
+			color.accumulate(rcolor, cst_materials[matID].reflectance);
+		}	
 	}
 
 	return color;
@@ -167,24 +169,35 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 
 	Color c = TraceRay(cst_camera.getRay(x, y), 5);
 
+
+
 	uint32 spos = threadIdx.x + (threadIdx.y * 8);
 		
 	presampled[spos].red = c.red;
 	presampled[spos].green = c.green;
 	presampled[spos].blue = c.blue;	
 
-	__syncthreads();
 
+
+	if ((threadIdx.x == 7) || (threadIdx.y == 7))
+	{
+		return;
+	}
+
+ 	__syncthreads();
 	uint32 pos = WINDOW_WIDTH * Y * SUB_CONST + X * SUB_CONST;
 
 	Color c0 = presampled[spos];
-	Color c1 = presampled[min(63, spos+1)];
-	Color c2 = presampled[min(63, spos+8)];
-	Color c3 = presampled[min(63, spos+9)];
+	Color c1 = presampled[spos+1];
+	Color c2 = presampled[spos+8];
+	Color c3 = presampled[spos+9];
 
-	for (uint32 i = 0, float k = 0.f; i < SUB_CONST; ++i, k += 1 / SUB_CONST)
+
+
+	for (uint32 i = 0, float k = 0; i < SUB_CONST; ++i, k += 1.f / SUB_CONST)
 	{
-		for (uint32 j = 0, float l = 0.f; j < SUB_CONST; ++j, l += 1 / SUB_CONST)
+		
+		for (uint32 j = 0, float l = 0.f; j < SUB_CONST; j++, l += 1.f / SUB_CONST)
 		{
 			uint32 p = pos+i+j*WINDOW_WIDTH;
 
@@ -192,10 +205,12 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 			float w2 = k * (1-l);
 			float w3 = (1-k) * l;
 			float w4 = k*l;
-		
-			data[p].x = min( ( w1 * c0.red + w2 * c1.red + w3 * c2.red + w4 * c3.red ) * 255.f, 255.f);
+
+		 	data[p].x = min( ( w1 * c0.red + w2 * c1.red + w3 * c2.red + w4 * c3.red ) * 255.f, 255.f);
 			data[p].y = min( ( w1 * c0.green + w2 * c1.green + w3 * c2.green + w4 * c3.green ) * 255.f, 255.f);
 			data[p].z = min( ( w1 * c0.blue + w2 * c1.blue + w3 * c2.blue + w4 * c3.blue ) * 255.f, 255.f);
+	
+
 		}
 	}
 }
@@ -213,7 +228,7 @@ extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeig
 {   	
 	dim3 threadsPerBlock(8, 8, 1); // 64 threads ~ 8*8 -> based on this shared memory for sampling is allocated !!!
 
-	dim3 numBlocks(WINDOW_WIDTH / SUB_CONST / threadsPerBlock.x, WINDOW_HEIGHT / SUB_CONST / threadsPerBlock.y);
+	dim3 numBlocks(WINDOW_WIDTH / SUB_CONST / (threadsPerBlock.x), WINDOW_HEIGHT / SUB_CONST / (threadsPerBlock.y));
 	
 	cudaMemcpyToSymbol(cst_camera, camera, sizeof(Camera));
 	cudaMemcpyToSymbol(cst_spheres, spheres, NUM_SPHERES * sizeof(Sphere));

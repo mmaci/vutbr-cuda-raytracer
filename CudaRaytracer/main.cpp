@@ -131,7 +131,9 @@ void initCuda(int argc, char** argv)
 	glBindTexture(GL_TEXTURE_2D, 0); // unbind
 
 	// cudaGraphicsGLRegisterImage(&cudaResourceTexture, textureId, GL_TEXTURE_2D, cudaGraphicsMapFlagsNone);
-
+	cudaError_t stat;
+	size_t myStackSize = STACK_SIZE;
+	stat = cudaDeviceSetLimit (cudaLimitStackSize, myStackSize);
 	runCuda();
 }
 
@@ -147,11 +149,11 @@ void initMaterials() {
 	Color c3; c3.set(0.25, 0, 0);
 	Color c4; c4.set(0.15, 0.1, 0.1);
 
-	PhongMaterial matBlue; matBlue.set(blue, white, c1, 5);
+	PhongMaterial matBlue; matBlue.set(blue, white, c1, 15, 0.3);
 	scene.add(matBlue); // MATERIAL_BLUE
 	PhongMaterial matRed; matRed.set(red, white, c2, 15);
 	scene.add(matRed); // MATERIAL_RED
-	PhongMaterial matGreen; matGreen.set(green, white, c3, 20, 0.1);
+	PhongMaterial matGreen; matGreen.set(green, white, c3, 20);
 	scene.add(matGreen); // MATERIAL_GREEN
 	PhongMaterial matYellow; matYellow.set(yellow, white, c4, 15);
 	scene.add(matYellow); // MATERIAL_YELLOW
