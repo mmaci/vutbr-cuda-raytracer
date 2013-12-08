@@ -159,8 +159,6 @@ __device__ Color TraceRay(const Ray &ray, int recursion)
 
 __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 {
-#ifdef BILINEAR_SAMPLING
-
 	__shared__ Color presampled[64];
 
 	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -171,11 +169,15 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 
 	Color c = TraceRay(cst_camera.getRay(x, y), 5);
 
+
+
 	uint32 spos = threadIdx.x + (threadIdx.y * 8);
 		
 	presampled[spos].red = c.red;
 	presampled[spos].green = c.green;
 	presampled[spos].blue = c.blue;	
+
+
 
 	if ((threadIdx.x == 7) || (threadIdx.y == 7))
 	{
@@ -189,6 +191,8 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 	Color c1 = presampled[spos+1];
 	Color c2 = presampled[spos+8];
 	Color c3 = presampled[spos+9];
+
+
 
 	for (uint32 i = 0, float k = 0; i < SUB_CONST; ++i, k += 1.f / SUB_CONST)
 	{
@@ -209,24 +213,6 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 
 		}
 	}
-
-#else
-
-	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x;
-	uint32 Y = (blockIdx.y * blockDim.y) + threadIdx.y;
-
-	float x = (2.f*X/WINDOW_WIDTH - 1.f);
-	float y = (2.f*Y/WINDOW_HEIGHT - 1.f);
-
-	Color c = TraceRay(cst_camera.getRay(x, y), 5);
-
-	uint32 p = WINDOW_WIDTH * Y + X;
-
-	data[p].x = min(c.red * 255.f, 255.f);
-	data[p].y = min(c.green * 255.f, 255.f);
-	data[p].z = min(c.blue * 255.f, 255.f);
-	
-#endif
 }
 
 
@@ -242,11 +228,7 @@ extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeig
 {   	
 	dim3 threadsPerBlock(8, 8, 1); // 64 threads ~ 8*8 -> based on this shared memory for sampling is allocated !!!
 
-#ifdef BILINEAR_SAMPLING
 	dim3 numBlocks(WINDOW_WIDTH / SUB_CONST / (threadsPerBlock.x), WINDOW_HEIGHT / SUB_CONST / (threadsPerBlock.y));
-#else
-	dim3 numBlocks(WINDOW_WIDTH / (threadsPerBlock.x), WINDOW_HEIGHT / (threadsPerBlock.y));
-#endif
 	
 	cudaMemcpyToSymbol(cst_camera, camera, sizeof(Camera));
 	cudaMemcpyToSymbol(cst_spheres, spheres, NUM_SPHERES * sizeof(Sphere));
