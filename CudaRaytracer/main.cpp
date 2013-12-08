@@ -70,13 +70,14 @@ void runCuda()
 */
 void display()
 {
-	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+	
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
+	
 	// run the Kernel
+	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 	runCuda();
-
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	// and draw everything
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, PBO);
 	glBindTexture(GL_TEXTURE_2D, textureId);
@@ -91,8 +92,7 @@ void display()
 
 	glutSwapBuffers();
 	glutPostRedisplay();  
-
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	
 
 	float delta = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0f;
 
