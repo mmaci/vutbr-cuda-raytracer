@@ -104,7 +104,7 @@ __device__ Color TraceRay(const Ray &ray, int recursion)
 		const float3 hitNormal = hitInfo.normal;
 		for (uint32 i = 0; i < NUM_LIGHTS; ++i)
 		{	
-			
+
 			const float3 lightPos = cst_lights[i].position;		
 			//const float3 shadowDir = CUDA::normalize(CUDA::float3_sub(lightPos, hitPoint));
 			const float3 shadowDir = cst_lights[i].getShadowRay(hitPoint).direction;
@@ -161,8 +161,12 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 {
 	__shared__ Color presampled[64];
 
-	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x;
-	uint32 Y = (blockIdx.y * blockDim.y) + threadIdx.y;
+	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x - blockIdx.x;
+	uint32 Y = (blockIdx.y * blockDim.y) + threadIdx.y - blockIdx.y;
+	if ((X > (WINDOW_WIDTH)) || (Y >(WINDOW_HEIGHT)))
+	{
+		return;
+	}
 
 	float x = (2.f*SUB_CONST*X/WINDOW_WIDTH - 1.f);
 	float y = (2.f*SUB_CONST*Y/WINDOW_HEIGHT - 1.f);
@@ -172,7 +176,7 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 
 
 	uint32 spos = threadIdx.x + (threadIdx.y * 8);
-		
+
 	presampled[spos].red = c.red;
 	presampled[spos].green = c.green;
 	presampled[spos].blue = c.blue;	
@@ -184,8 +188,8 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 		return;
 	}
 
- 	__syncthreads();
-	uint32 pos = WINDOW_WIDTH * Y * SUB_CONST + X * SUB_CONST;
+	__syncthreads();
+	uint32 pos = WINDOW_WIDTH * (Y) * SUB_CONST + (X-3) * SUB_CONST;//FIXME
 
 	Color c0 = presampled[spos];
 	Color c1 = presampled[spos+1];
@@ -196,7 +200,7 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 
 	for (uint32 i = 0, float k = 0; i < SUB_CONST; ++i, k += 1.f / SUB_CONST)
 	{
-		
+
 		for (uint32 j = 0, float l = 0.f; j < SUB_CONST; j++, l += 1.f / SUB_CONST)
 		{
 			uint32 p = pos+i+j*WINDOW_WIDTH;
@@ -206,10 +210,10 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 			float w3 = (1-k) * l;
 			float w4 = k*l;
 
-		 	data[p].x = min( ( w1 * c0.red + w2 * c1.red + w3 * c2.red + w4 * c3.red ) * 255.f, 255.f);
+			data[p].x = min( ( w1 * c0.red + w2 * c1.red + w3 * c2.red + w4 * c3.red ) * 255.f, 255.f);
 			data[p].y = min( ( w1 * c0.green + w2 * c1.green + w3 * c2.green + w4 * c3.green ) * 255.f, 255.f);
 			data[p].z = min( ( w1 * c0.blue + w2 * c1.blue + w3 * c2.blue + w4 * c3.blue ) * 255.f, 255.f);
-	
+
 
 		}
 	}
@@ -226,10 +230,18 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 */
 extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeight, Sphere* spheres, Plane* planes, PointLight* lights, PhongMaterial* materials, Camera* camera)
 {   	
-	dim3 threadsPerBlock(8, 8, 1); // 64 threads ~ 8*8 -> based on this shared memory for sampling is allocated !!!
+	dim3 threadsPerBlock(THREADS_PER_BLOCK, THREADS_PER_BLOCK, 1); // 64 threads ~ 8*8 -> based on this shared memory for sampling is allocated !!!
 
-	dim3 numBlocks(WINDOW_WIDTH / SUB_CONST / (threadsPerBlock.x), WINDOW_HEIGHT / SUB_CONST / (threadsPerBlock.y));
-	
+	int blocksx = WINDOW_WIDTH / SUB_CONST / (threadsPerBlock.x);
+	int blocksy = WINDOW_HEIGHT / SUB_CONST / (threadsPerBlock.y);
+	blocksx += ceil(float(blocksx) / THREADS_PER_BLOCK); //za kazdych THREADS_PER_BLOCK pridam jeden blok navic
+	blocksy += ceil(float(blocksy) / THREADS_PER_BLOCK);
+	//blocksx += THREADS_PER_BLOCK - (blocksx % THREADS_PER_BLOCK); 
+	//blocksy += THREADS_PER_BLOCK - (blocksy % THREADS_PER_BLOCK);
+
+	dim3 numBlocks(blocksx,blocksy );
+
+
 	cudaMemcpyToSymbol(cst_camera, camera, sizeof(Camera));
 	cudaMemcpyToSymbol(cst_spheres, spheres, NUM_SPHERES * sizeof(Sphere));
 	cudaMemcpyToSymbol(cst_planes, planes, NUM_PLANES * sizeof(Plane));
@@ -238,7 +250,7 @@ extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeig
 
 	RTKernel<<<numBlocks, threadsPerBlock>>>(data, imageWidth, imageHeight);
 	cudaThreadSynchronize();
-	
+
 
 	checkCUDAError();		
 }
