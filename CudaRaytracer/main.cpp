@@ -22,6 +22,9 @@
 #include <chrono>
 
 
+#include "bvh.h"
+
+
 SceneStats* dev_sceneStats;
 
 Scene scene;
