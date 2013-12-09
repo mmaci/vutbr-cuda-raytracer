@@ -38,6 +38,8 @@ public:
 		return &sceneStats;
 	};
 
+	std::vector<Sphere> getSphereVector() const { return spheres; }
+
 private:
 	std::vector<PhongMaterial> materials;
 	std::vector<Sphere> spheres;

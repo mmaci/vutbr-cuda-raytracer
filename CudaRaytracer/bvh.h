@@ -1,21 +1,21 @@
 #include <vector>
 #include <vector_types.h>
 #include "constants.h"
+#include <algorithm>
 
 const uint32 SPLIT_LIMIT = 3;
 
-struct Primitive {
+struct Obj {
 
 	float x;
 	float y;
 	float z;
 	float radius;
 
+	Sphere sphere;
 };
 
-class BVHnode {
-
-private:
+struct BVHnode {
 
 	float3 max;
 	float3 min;
@@ -24,26 +24,27 @@ private:
 	BVHnode* next;
 	BVHnode* parent;
 
-	std::vector<Primitive> primitives;	
-
-public:
+	std::vector<Obj> leaves;
 
 	char nextAxis(char axis) {
+		return 'x';
+
 		switch (axis) {
 			case 'x': return 'y';
-			case 'y': return 'z';
-			case 'z': default: return 'x';
+			case 'y': return 'x';
+			default: return 'x';
 		}		
-	}
+	}	
 
-	void buildBVH(std::vector<Primitive> objects, BVHnode* parent, uint32 start, uint32 end, char axis)
+	void buildBVH(std::vector<Obj> objects, BVHnode* p, uint32 start, uint32 end, char axis)
 	{		
 		uint32 count = end - start;
-		
-		Primitive newPrimitive;
-		std::vector<Primitive> newList;
+		std::vector<Obj> newList;
+		parent = p;
 
-		if (objects.empty() || end < start) {
+		// error case
+		if (end < start)
+		{
 			max.x = 0.f;
 			max.y = 0.f;
 			max.z = 0.f;
@@ -58,7 +59,9 @@ public:
 			return;
 		}
 
-		if (count < SPLIT_LIMIT) {
+		// finish state
+		if (count < SPLIT_LIMIT)
+		{
 			min.x = objects[start].x - objects[start].radius;
 			max.x = objects[start].x + objects[start].radius;
 			min.y = objects[start].y - objects[start].radius;
@@ -69,92 +72,103 @@ public:
 			prev = nullptr;
 			next = nullptr;
 	
-
-		for (int loop = start; loop <= end; loop++)
-		{
-			// X
+			uint32 n = 0;
+			for (uint32 loop = start; loop <= end; loop++)
+			{
+				
+				// X
 			 
-			if (objects[loop].x - objects[loop].radius < min.x)
-				min.x = objects[loop].x - objects[loop].radius;
-			if (objects[loop].x + objects[loop].radius > max.x)
-				max.x = objects[loop].x + objects[loop].radius;
-			if (parent && (min.x < parent->min.x))
-				parent->min.x = min.x;			
-			if (parent && max.x > parent->max.x)
-				parent->max.x = max.x;
+				if (objects[loop].x - objects[loop].radius < min.x)
+					min.x = objects[loop].x - objects[loop].radius;
+				if (objects[loop].x + objects[loop].radius > max.x)
+					max.x = objects[loop].x + objects[loop].radius;
+				if (parent && (min.x < parent->min.x))
+					parent->min.x = min.x;			
+				if (parent && max.x > parent->max.x)
+					parent->max.x = max.x;
 
-			// Y
+				// Y
 
-			if (objects[loop].y - objects[loop].radius < min.y)
-				min.y = objects[loop].y - objects[loop].radius;
-			if (objects[loop].y + objects[loop].radius > max.y)
-				max.y = objects[loop].y + objects[loop].radius;
-			if (parent && min.y < parent->min.y)
-				parent->min.y = min.y;			
-			if (parent && max.y > parent->max.y)
-				parent->max.y = max.y;
+				if (objects[loop].y - objects[loop].radius < min.y)
+					min.y = objects[loop].y - objects[loop].radius;
+				if (objects[loop].y + objects[loop].radius > max.y)
+					max.y = objects[loop].y + objects[loop].radius;
+				if (parent && min.y < parent->min.y)
+					parent->min.y = min.y;			
+				if (parent && max.y > parent->max.y)
+					parent->max.y = max.y;
 
-			// Z
+				// Z
 
-			if (objects[loop].z - objects[loop].radius < min.z)
-				min.z = objects[loop].z - objects[loop].radius;
-			if (objects[loop].z + objects[loop].radius > max.z)
-				max.z = objects[loop].z + objects[loop].radius;
-			if (parent && min.z < parent->min.z)
-				parent->min.z = min.z;			
-			if (parent && max.z > parent->max.z)
-				parent->max.z = max.z;
+				if (objects[loop].z - objects[loop].radius < min.z)
+					min.z = objects[loop].z - objects[loop].radius;
+				if (objects[loop].z + objects[loop].radius > max.z)
+					max.z = objects[loop].z + objects[loop].radius;
+				if (parent && min.z < parent->min.z)
+					parent->min.z = min.z;			
+				if (parent && max.z > parent->max.z)
+					parent->max.z = max.z;
 
-			primitives.push_back(objects[loop]);			
+				leaves.push_back(objects[loop]);
+				n++;
+			}
+			return;
 		}
-		return;
-		}
 
-		for (int loop = start; loop <= end; loop++) {
+		// normal case
+
+		// copy all the objects in a new list
+		for (uint32 loop = start; loop <= end; loop++) {
 			newList.push_back(objects[loop]);
 		}
 
+		// sort them by whatever axis we want
 		switch(axis) {
 			case 'x':
-				// sort along x axis
+				std::sort(newList.begin(), newList.end(), [](Obj const& p1, Obj const& p2){ return p1.x > p2.x; });
 				break;
 			case 'y':
-				// sort along y axis
+				std::sort(newList.begin(), newList.end(), [](Obj const& p1, Obj const& p2){ return p1.y > p2.y; });
 				break;
 			case 'z':
-				// sort along z axis
+				std::sort(newList.begin(), newList.end(), [](Obj const& p1, Obj const& p2){ return p1.z > p2.z; });
 				break;
 		}
 
-		int center = (int) (count * 0.5f);
+		// divide them into 2 parts
+		uint32 center = count / 2;
 
 		min.x = newList[0].x - newList[0].radius;
 		max.x = newList[0].x + newList[0].radius;
 		min.y = newList[0].y - newList[0].radius;
 		max.y = newList[0].y + newList[0].radius;
 		min.z = newList[0].z - newList[0].radius;
-		max.z = newList[0].z + newList[0].radius;
-    
+		max.z = newList[0].z + newList[0].radius;    
 
-	buildBVH(newList, this, 0, center, nextAxis(axis));
-    buildBVH(newList, this, center + 1, count, nextAxis(axis)); 
+		prev = new BVHnode;
+		prev->buildBVH(newList, this, 0, center, nextAxis(axis));
 
-    if (parent && min.x < parent->min.x)
-        parent->min.x = min.x;
+		next = new BVHnode;
+		next->buildBVH(newList, this, center + 1, count, nextAxis(axis)); 
 
-    if (parent && max.x > parent->max.x)
-        parent->max.x = max.x;
+		if (parent) {
+			if (min.x < parent->min.x)
+				parent->min.x = min.x;
 
-    if (parent && min.y < parent->min.y)
-        parent->min.y = min.y;
+			if (max.x > parent->max.x)
+				parent->max.x = max.x;
 
-    if (parent && max.y > parent->max.y)
-        parent->max.y = max.y;
+			if (min.y < parent->min.y)
+				parent->min.y = min.y;
 
-    if (parent && min.z < parent->min.z)
-        parent->min.z = min.z;
+			if (max.y > parent->max.y)
+				parent->max.y = max.y;
 
-    if (parent && max.z > parent->max.z)
-        parent->max.z = max.z;
+			if (min.z < parent->min.z)
+				parent->min.z = min.z;
+
+			if (max.z > parent->max.z)
+				parent->max.z = max.z;
+		}
 	}
 };

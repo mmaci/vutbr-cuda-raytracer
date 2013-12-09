@@ -172,6 +172,25 @@ void initSpheres() {
 	Sphere s2;
 	s2.set(make_float3(1.7, 4, 0), 1.6, MATERIAL_RED);
 	scene.add(s2);
+
+	std::vector<Sphere> spheres = scene.getSphereVector();
+	std::vector<Obj> objects;
+	for (std::vector<Sphere>::iterator it = spheres.begin(); it != spheres.end(); ++it) {
+		Sphere sphere = *it;
+		Obj o;
+		o.sphere = sphere;
+		o.x = sphere.center.x;
+		o.y = sphere.center.y;
+		o.z = sphere.center.z;
+		o.radius = sphere.radius;
+
+		objects.push_back(o);
+	}
+
+	BVHnode tree;
+	tree.buildBVH(objects, nullptr, 0, objects.size() - 1, 'x');
+
+
 }
 
 void initPlanes() {
