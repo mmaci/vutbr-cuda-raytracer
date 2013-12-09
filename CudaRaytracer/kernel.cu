@@ -162,38 +162,46 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 #ifdef BILINEAR_SAMPLING
 	__shared__ Color presampled[64];
 
-	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x - blockIdx.x;
-	uint32 Y = (blockIdx.y * blockDim.y) + threadIdx.y - blockIdx.y;
-	
-	if ((X > (WINDOW_WIDTH)) || (Y >(WINDOW_HEIGHT)))	
-		return;	
+	uint32 X = SUB_CONST*((blockIdx.x * blockDim.x) + threadIdx.x - blockIdx.x);
+	uint32 Y = SUB_CONST*((blockIdx.y * blockDim.y) + threadIdx.y - blockIdx.y);
 
-	float x = (2.f*SUB_CONST*X/WINDOW_WIDTH - 1.f);
-	float y = (2.f*SUB_CONST*Y/WINDOW_HEIGHT - 1.f);
+	if ((X >= (WINDOW_WIDTH-1+SUB_CONST)) || (Y >=(WINDOW_HEIGHT-1+SUB_CONST)))
+	{	//potrebuju spocitat i ty co uz jsou za hranou abych mohl dopocitat poslednich 1 až SUB_CONST bodu do konce obrazovky maximalne X = 798 + 4 
+		return;
+	}
+	float x = (2.f*X/WINDOW_WIDTH - 1.f);
+	float y = (2.f*Y/WINDOW_HEIGHT - 1.f);
 
-	Color c = TraceRay(cst_camera.getRay(x, y), 5);
+	Color c = TraceRay(cst_camera.getRay(x, y), 15);
 
-	uint32 spos = threadIdx.x + (threadIdx.y * 8);
+	uint32 spos = threadIdx.x + (threadIdx.y * THREADS_PER_BLOCK);
 
 	presampled[spos].red = c.red;
 	presampled[spos].green = c.green;
 	presampled[spos].blue = c.blue;	
 
-	if ((threadIdx.x == 7) || (threadIdx.y == 7))
+	if ((threadIdx.x == THREADS_PER_BLOCK-1) || (threadIdx.y == THREADS_PER_BLOCK-1)) // posledni sloupec radek je spocitan z predesleho
+	{
 		return;
+	}
 
 	__syncthreads();
-
-	uint32 pos = WINDOW_WIDTH * (Y) * SUB_CONST + (X-3) * SUB_CONST;//FIXME
 
 	Color c0 = presampled[spos];
 	Color c1 = presampled[spos+1];
 	Color c2 = presampled[spos+8];
 	Color c3 = presampled[spos+9];
 
-	for (uint32 i = 0, float k = 0; i < SUB_CONST; ++i, k += 1.f / SUB_CONST)
+	if ((X >= (WINDOW_WIDTH)) || (Y >=(WINDOW_HEIGHT)))
+	{	//krajni uz pocitat nemusim
+		return;
+	}
+
+	uint32 pos = WINDOW_WIDTH * (Y) + (X);
+
+	for (uint32 i = 0, float k = 0.f; i < SUB_CONST; i++, k += 1.f / (SUB_CONST-1))
 	{
-		for (uint32 j = 0, float l = 0.f; j < SUB_CONST; j++, l += 1.f / SUB_CONST)
+		for (uint32 j = 0, float l = 0.f; j < SUB_CONST; j++, l += 1.f / (SUB_CONST-1))
 		{
 			uint32 p = pos+i+j*WINDOW_WIDTH;
 
@@ -202,9 +210,10 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 			float w3 = (1-k) * l;
 			float w4 = k*l;
 
+
 			data[p].x = min( ( w1 * c0.red + w2 * c1.red + w3 * c2.red + w4 * c3.red ) * 255.f, 255.f);
 			data[p].y = min( ( w1 * c0.green + w2 * c1.green + w3 * c2.green + w4 * c3.green ) * 255.f, 255.f);
-			data[p].z = min( ( w1 * c0.blue + w2 * c1.blue + w3 * c2.blue + w4 * c3.blue ) * 255.f, 255.f);
+			data[p].z =min( ( w1 * c0.blue + w2 * c1.blue + w3 * c2.blue + w4 * c3.blue ) * 255.f, 255.f);
 		}
 	}
 
@@ -212,11 +221,11 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 
 	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x;
 	uint32 Y = (blockIdx.y * blockDim.y) + threadIdx.y;
-	
+
 	float x = (2.f*X/WINDOW_WIDTH - 1.f);
 	float y = (2.f*Y/WINDOW_HEIGHT - 1.f);
 
-	Color c = TraceRay(cst_camera.getRay(x, y), 5);
+	Color c = TraceRay(cst_camera.getRay(x, y), 15);
 
 	uint32 p = Y * WINDOW_WIDTH + X;
 
@@ -241,12 +250,10 @@ extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeig
 #ifdef BILINEAR_SAMPLING
 	dim3 threadsPerBlock(THREADS_PER_BLOCK, THREADS_PER_BLOCK, 1); // 64 threads ~ 8*8 -> based on this shared memory for sampling is allocated !!!
 
-	int blocksx = WINDOW_WIDTH / SUB_CONST / (threadsPerBlock.x);
-	int blocksy = WINDOW_HEIGHT / SUB_CONST / (threadsPerBlock.y);
-	blocksx += ceil(float(blocksx) / THREADS_PER_BLOCK); //za kazdych THREADS_PER_BLOCK pridam jeden blok navic
-	blocksy += ceil(float(blocksy) / THREADS_PER_BLOCK);
-	//blocksx += THREADS_PER_BLOCK - (blocksx % THREADS_PER_BLOCK); 
-	//blocksy += THREADS_PER_BLOCK - (blocksy % THREADS_PER_BLOCK);
+	int blocksx = WINDOW_WIDTH / SUB_CONST / (threadsPerBlock.x-1);
+	int blocksy = WINDOW_HEIGHT / SUB_CONST / (threadsPerBlock.y-1);
+	blocksx = blocksx + ceil(float(blocksx) / THREADS_PER_BLOCK); //zjistit kolik tam je 
+	blocksy = blocksy + ceil(float(blocksy) / THREADS_PER_BLOCK);
 
 	dim3 numBlocks(blocksx,blocksy);
 #else

@@ -154,11 +154,11 @@ void initMaterials() {
 	Color c3; c3.set(0.25, 0, 0);
 	Color c4; c4.set(0.15, 0.1, 0.1);
 
-	PhongMaterial matBlue; matBlue.set(blue, white, c1, 15, 0.3);
+	PhongMaterial matBlue; matBlue.set(blue, white, c1, 15);
 	scene.add(matBlue); // MATERIAL_BLUE
 	PhongMaterial matRed; matRed.set(red, white, c2, 15);
 	scene.add(matRed); // MATERIAL_RED
-	PhongMaterial matGreen; matGreen.set(green, white, c3, 20);
+	PhongMaterial matGreen; matGreen.set(green, white, c3, 20, 0.5);
 	scene.add(matGreen); // MATERIAL_GREEN
 	PhongMaterial matYellow; matYellow.set(yellow, white, c4, 15);
 	scene.add(matYellow); // MATERIAL_YELLOW

@@ -39,6 +39,6 @@ enum Materials {
 
 #define SUB_CONST 4
 
-// #define BILINEAR_SAMPLING
+#define BILINEAR_SAMPLING 1
 
 #endif
