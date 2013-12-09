@@ -70,12 +70,14 @@ void runCuda()
 */
 void display()
 {
-	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+	
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 	// run the Kernel
 	runCuda();
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 	// and draw everything
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, PBO);
@@ -92,7 +94,7 @@ void display()
 	glutSwapBuffers();
 	glutPostRedisplay();  
 
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	
 
 	float delta = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0f;
 
@@ -133,7 +135,7 @@ void initCuda(int argc, char** argv)
 	// cudaGraphicsGLRegisterImage(&cudaResourceTexture, textureId, GL_TEXTURE_2D, cudaGraphicsMapFlagsNone);
 	cudaError_t stat;
 	size_t myStackSize = STACK_SIZE;
-	stat = cudaDeviceSetLimit (cudaLimitStackSize, myStackSize);
+	stat = cudaDeviceSetLimit(cudaLimitStackSize, myStackSize);
 	runCuda();
 }
 

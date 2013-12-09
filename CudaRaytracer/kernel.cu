@@ -159,21 +159,19 @@ __device__ Color TraceRay(const Ray &ray, int recursion)
 
 __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 {
+#ifdef BILINEAR_SAMPLING
 	__shared__ Color presampled[64];
 
 	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x - blockIdx.x;
 	uint32 Y = (blockIdx.y * blockDim.y) + threadIdx.y - blockIdx.y;
-	if ((X > (WINDOW_WIDTH)) || (Y >(WINDOW_HEIGHT)))
-	{
-		return;
-	}
+	
+	if ((X > (WINDOW_WIDTH)) || (Y >(WINDOW_HEIGHT)))	
+		return;	
 
 	float x = (2.f*SUB_CONST*X/WINDOW_WIDTH - 1.f);
 	float y = (2.f*SUB_CONST*Y/WINDOW_HEIGHT - 1.f);
 
 	Color c = TraceRay(cst_camera.getRay(x, y), 5);
-
-
 
 	uint32 spos = threadIdx.x + (threadIdx.y * 8);
 
@@ -181,14 +179,11 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 	presampled[spos].green = c.green;
 	presampled[spos].blue = c.blue;	
 
-
-
 	if ((threadIdx.x == 7) || (threadIdx.y == 7))
-	{
 		return;
-	}
 
 	__syncthreads();
+
 	uint32 pos = WINDOW_WIDTH * (Y) * SUB_CONST + (X-3) * SUB_CONST;//FIXME
 
 	Color c0 = presampled[spos];
@@ -196,11 +191,8 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 	Color c2 = presampled[spos+8];
 	Color c3 = presampled[spos+9];
 
-
-
 	for (uint32 i = 0, float k = 0; i < SUB_CONST; ++i, k += 1.f / SUB_CONST)
 	{
-
 		for (uint32 j = 0, float l = 0.f; j < SUB_CONST; j++, l += 1.f / SUB_CONST)
 		{
 			uint32 p = pos+i+j*WINDOW_WIDTH;
@@ -213,10 +205,26 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 			data[p].x = min( ( w1 * c0.red + w2 * c1.red + w3 * c2.red + w4 * c3.red ) * 255.f, 255.f);
 			data[p].y = min( ( w1 * c0.green + w2 * c1.green + w3 * c2.green + w4 * c3.green ) * 255.f, 255.f);
 			data[p].z = min( ( w1 * c0.blue + w2 * c1.blue + w3 * c2.blue + w4 * c3.blue ) * 255.f, 255.f);
-
-
 		}
 	}
+
+#else
+
+	uint32 X = (blockIdx.x * blockDim.x) + threadIdx.x;
+	uint32 Y = (blockIdx.y * blockDim.y) + threadIdx.y;
+	
+	float x = (2.f*X/WINDOW_WIDTH - 1.f);
+	float y = (2.f*Y/WINDOW_HEIGHT - 1.f);
+
+	Color c = TraceRay(cst_camera.getRay(x, y), 5);
+
+	uint32 p = Y * WINDOW_WIDTH + X;
+
+	data[p].x = min(c.red * 255.f, 255.f);
+	data[p].y = min(c.green * 255.f, 255.f);
+	data[p].z = min(c.blue * 255.f, 255.f);
+
+#endif
 }
 
 
@@ -229,7 +237,8 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 * @param float time
 */
 extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeight, Sphere* spheres, Plane* planes, PointLight* lights, PhongMaterial* materials, Camera* camera)
-{   	
+{   
+#ifdef BILINEAR_SAMPLING
 	dim3 threadsPerBlock(THREADS_PER_BLOCK, THREADS_PER_BLOCK, 1); // 64 threads ~ 8*8 -> based on this shared memory for sampling is allocated !!!
 
 	int blocksx = WINDOW_WIDTH / SUB_CONST / (threadsPerBlock.x);
@@ -239,8 +248,11 @@ extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeig
 	//blocksx += THREADS_PER_BLOCK - (blocksx % THREADS_PER_BLOCK); 
 	//blocksy += THREADS_PER_BLOCK - (blocksy % THREADS_PER_BLOCK);
 
-	dim3 numBlocks(blocksx,blocksy );
-
+	dim3 numBlocks(blocksx,blocksy);
+#else
+	dim3 threadsPerBlock(THREADS_PER_BLOCK, THREADS_PER_BLOCK, 1); // 64 threads ~ 8*8 -> based on this shared memory for sampling is allocated !!!
+	dim3 numBlocks(WINDOW_WIDTH / threadsPerBlock.x, WINDOW_HEIGHT / threadsPerBlock.y);
+#endif
 
 	cudaMemcpyToSymbol(cst_camera, camera, sizeof(Camera));
 	cudaMemcpyToSymbol(cst_spheres, spheres, NUM_SPHERES * sizeof(Sphere));
@@ -250,7 +262,6 @@ extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeig
 
 	RTKernel<<<numBlocks, threadsPerBlock>>>(data, imageWidth, imageHeight);
 	cudaThreadSynchronize();
-
 
 	checkCUDAError();		
 }
