@@ -163,7 +163,7 @@ __device__ Color TraceRay(const Ray &ray, int recursion, cuBVHnode* tree)
 
 			HitInfo shadowHit = intersectRayWithScene(lightRay, tree);
 
-			if ((shadowHit.hit) && (fabs(shadowHit.t - CUDA::length(CUDA::float3_sub(hitPoint, lightPos))) < 0.0001f)) 
+			if ((shadowHit.hit) && (fabs(shadowHit.t - CUDA::length(CUDA::float3_sub(hitPoint, lightPos))) < 0.05f)) 
 				//if ((shadowHit.hit) && (shadowHit.t < CUDA::length(CUDA::float3_sub(hitPoint, lightPos)) + 0.0001f)) 
 			{
 				color.accumulate(CUDA::mult(cst_materials[hitInfo.materialId].diffuse, cst_lights[i].color), intensity);
@@ -219,7 +219,7 @@ __global__ void RTKernel(uchar3* data, cuBVHnode* tree, uint32 width, uint32 hei
 	float x = (2.f*X/WINDOW_WIDTH - 1.f);
 	float y = (2.f*Y/WINDOW_HEIGHT - 1.f);
 
-	Color c = TraceRay(cst_camera.getRay(x, y), 15);
+	Color c = TraceRay(cst_camera.getRay(x, y), 15, tree);
 
 	uint32 spos = threadIdx.x + (threadIdx.y * THREADS_PER_BLOCK);
 

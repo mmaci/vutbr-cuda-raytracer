@@ -34,10 +34,10 @@ enum Materials {
 };
 
 #define NUM_PLANES 4
-#define NUM_SPHERES 40
+#define NUM_SPHERES 50
 #define NUM_LIGHTS 1
 
-#define SUB_CONST 4
+#define SUB_CONST 8
 
 // #define BILINEAR_SAMPLING 1
 
