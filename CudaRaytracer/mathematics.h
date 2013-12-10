@@ -34,6 +34,10 @@ namespace CUDA {
 	__device__ inline float length(float3 const& vector) {
 		return sqrt((vector.x * vector.x) + (vector.y * vector.y) + (vector.z * vector.z));
 	}
+
+	__device__ inline float cumax(float const& a, float const& b) { return a > b ? a : b; }
+
+	__device__ inline float cumin(float const& a, float const& b) { return a > b ? b : a; }
 	
 }
 

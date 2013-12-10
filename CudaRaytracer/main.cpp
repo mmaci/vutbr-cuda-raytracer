@@ -27,6 +27,8 @@
 
 SceneStats* dev_sceneStats;
 
+cuBVHnode* cuBVHTree;
+
 Scene scene;
 
 /** @var GLuint pixel buffer object */
@@ -41,7 +43,7 @@ cudaGraphicsResource_t cudaResourceBuffer;
 /** @var cudaGraphicsResource_t cuda texture resource */
 cudaGraphicsResource_t cudaResourceTexture;
 
-extern "C" void launchRTKernel(uchar3* , uint32, uint32, Sphere*, Plane*, PointLight*, PhongMaterial*, Camera*);
+extern "C" void launchRTKernel(uchar3* , uint32, uint32, Sphere*, Plane*, PointLight*, PhongMaterial*, Camera*, cuBVHnode*);
 
 float deltaTime = 0.0f;
 float fps = 0.0f;
@@ -61,7 +63,7 @@ void runCuda()
 	// cudaGraphicsMapResources(1, &cudaResourceTexture, 0);
 	cudaGraphicsResourceGetMappedPointer((void **)&data, &numBytes, cudaResourceBuffer);
 
-	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT, scene.getSpheres(), scene.getPlanes(), scene.getLights(), scene.getMaterials(), scene.getCamera());		
+	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT, scene.getSpheres(), scene.getPlanes(), scene.getLights(), scene.getMaterials(), scene.getCamera(), cuBVHTree);		
 
 	cudaGraphicsUnmapResources(1, &cudaResourceBuffer, 0);
 	// cudaGraphicsUnmapResources(1, &cudaResourceTexture, 0);	
@@ -165,13 +167,19 @@ void initMaterials() {
 }
 
 void initSpheres() {
-	Sphere s1;
-	s1.set(make_float3(-1.7, 4, 0), 1.6, MATERIAL_BLUE);
-	scene.add(s1);
-
-	Sphere s2;
-	s2.set(make_float3(1.7, 4, 0), 1.6, MATERIAL_RED);
-	scene.add(s2);
+	
+	srand (time(NULL));
+	for (int i = 0; i < NUM_SPHERES; ++i) {
+		Sphere s;
+		s.set(make_float3((static_cast<float>(rand()) / static_cast <float>(RAND_MAX)) * 10.f - 5.f, 
+						  (static_cast<float>(rand()) / static_cast <float>(RAND_MAX)) * 10.f,
+						  0),
+						  static_cast<float>(rand()) / static_cast <float>(RAND_MAX) * 1.f,
+						  rand() % NUM_MATERIALS);
+		scene.add(s);
+	}
+	
+#ifdef USE_BVH
 
 	std::vector<Sphere> spheres = scene.getSphereVector();
 	std::vector<Obj> objects;
@@ -189,8 +197,10 @@ void initSpheres() {
 
 	BVHnode tree;
 	tree.buildBVH(objects, nullptr, 0, objects.size() - 1, 'x');
+	
+	cuBVHTree = copyBVHToDevice(&tree);
 
-
+#endif
 }
 
 void initPlanes() {

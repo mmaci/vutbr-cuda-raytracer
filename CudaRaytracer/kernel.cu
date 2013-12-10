@@ -10,6 +10,8 @@
 #include "scene.h"
 #include "phong.h"
 
+#include "bvh.h"
+
 __constant__ Camera cst_camera;
 __constant__ Sphere cst_spheres[NUM_SPHERES];
 __constant__ PointLight cst_lights[NUM_LIGHTS];
@@ -32,7 +34,7 @@ void checkCUDAError()
 }
 
 
-__device__ HitInfo intersectRayWithScene(Ray const& ray)
+__device__ HitInfo intersectRayWithScene(Ray const& ray, cuBVHnode* tree)
 {
 	HitInfo hitInfo, hit;
 
@@ -43,6 +45,44 @@ __device__ HitInfo intersectRayWithScene(Ray const& ray)
 
 	uint32 i;
 	// SPHERES
+#ifdef USE_BVH
+		while (true) {
+			if (!tree->prev && !tree->next) {
+				for (uint32 i = 0; i < SPLIT_LIMIT; i++) {
+					hit = tree->leaves[i].sphere.intersect(ray);
+					if (hit.hit)
+					{
+						if (st > hit.t)
+						{
+							st = hit.t;
+							maxSi = i;
+						}	
+					}
+				}
+				break;
+			}
+
+			
+			if (tree->prev) {
+				hit = tree->prev->intersect(ray);
+				if (hit.hit) {
+					tree = tree->prev;
+					continue;
+				}
+			}
+			if (tree->next) {
+				hit = tree->next->intersect(ray);
+				if (hit.hit) {
+					tree = tree->next;
+					continue;
+				}
+			}
+			break;
+		}
+			
+		
+		
+#else
 	for (i = 0; i < NUM_SPHERES; ++i)
 	{
 		hit = cst_spheres[i].intersect(ray);
@@ -55,6 +95,7 @@ __device__ HitInfo intersectRayWithScene(Ray const& ray)
 			}	
 		}
 	}
+#endif
 	for (i = 0; i < NUM_PLANES; ++i){
 		hit = cst_planes[i].intersect(ray);
 		if (hit.hit){
@@ -83,19 +124,25 @@ __device__ HitInfo intersectRayWithScene(Ray const& ray)
 	{
 		hitInfo.t = st;
 		hitInfo.point = ray.getPoint(st);
+
+#ifdef USE_BVH
+		hitInfo.normal = tree->leaves[maxSi].sphere.getNormal(hitInfo.point);		
+		hitInfo.materialId = tree->leaves[maxSi].sphere.materialId;
+#else
 		hitInfo.normal = cst_spheres[maxSi].getNormal(hitInfo.point);		
 		hitInfo.materialId = cst_spheres[maxSi].materialId;
+#endif
 	}
 	hitInfo.hit = true;
 	return hitInfo;	
 }
 
 
-__device__ Color TraceRay(const Ray &ray, int recursion)
+__device__ Color TraceRay(const Ray &ray, int recursion, cuBVHnode* tree)
 {
 	Color color; color.set(0.f, 0.f, 0.f);
 
-	HitInfo hitInfo = intersectRayWithScene(ray);
+	HitInfo hitInfo = intersectRayWithScene(ray, tree);
 	if (hitInfo.hit)
 	{				
 		const int matID = hitInfo.materialId;
@@ -114,7 +161,7 @@ __device__ Color TraceRay(const Ray &ray, int recursion)
 			//if (true /*intensity > 0.f*/) { // only if there is enought light
 			Ray lightRay = Ray(cst_lights[i].position, CUDA::float3_sub(hitPoint, lightPos));
 
-			HitInfo shadowHit = intersectRayWithScene(lightRay);
+			HitInfo shadowHit = intersectRayWithScene(lightRay, tree);
 
 			if ((shadowHit.hit) && (fabs(shadowHit.t - CUDA::length(CUDA::float3_sub(hitPoint, lightPos))) < 0.0001f)) 
 				//if ((shadowHit.hit) && (shadowHit.t < CUDA::length(CUDA::float3_sub(hitPoint, lightPos)) + 0.0001f)) 
@@ -138,7 +185,7 @@ __device__ Color TraceRay(const Ray &ray, int recursion)
 			rray.ShiftStart(1e-5);
 
 
-			Color rcolor = TraceRay(rray, recursion-1);
+			Color rcolor = TraceRay(rray, recursion-1, tree);
 			//        color *= 1-phong.GetReflectance();
 			color.accumulate(rcolor, cst_materials[matID].reflectance);
 		}	
@@ -157,7 +204,7 @@ __device__ Color TraceRay(const Ray &ray, int recursion)
 */
 
 
-__global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
+__global__ void RTKernel(uchar3* data, cuBVHnode* tree, uint32 width, uint32 height)
 {
 #ifdef BILINEAR_SAMPLING
 	__shared__ Color presampled[64];
@@ -225,7 +272,8 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 	float x = (2.f*X/WINDOW_WIDTH - 1.f);
 	float y = (2.f*Y/WINDOW_HEIGHT - 1.f);
 
-	Color c = TraceRay(cst_camera.getRay(x, y), 15);
+
+	Color c = TraceRay(cst_camera.getRay(x, y), 15, tree);
 
 	uint32 p = Y * WINDOW_WIDTH + X;
 
@@ -245,7 +293,7 @@ __global__ void RTKernel(uchar3* data, uint32 width, uint32 height)
 * @param uint32 height
 * @param float time
 */
-extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeight, Sphere* spheres, Plane* planes, PointLight* lights, PhongMaterial* materials, Camera* camera)
+extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeight, Sphere* spheres, Plane* planes, PointLight* lights, PhongMaterial* materials, Camera* camera, cuBVHnode* tree)
 {   
 #ifdef BILINEAR_SAMPLING
 	dim3 threadsPerBlock(THREADS_PER_BLOCK, THREADS_PER_BLOCK, 1); // 64 threads ~ 8*8 -> based on this shared memory for sampling is allocated !!!
@@ -267,7 +315,10 @@ extern "C" void launchRTKernel(uchar3* data, uint32 imageWidth, uint32 imageHeig
 	cudaMemcpyToSymbol(cst_lights, lights, NUM_LIGHTS * sizeof(PointLight));
 	cudaMemcpyToSymbol(cst_materials, materials, NUM_MATERIALS * sizeof(PhongMaterial));	
 
-	RTKernel<<<numBlocks, threadsPerBlock>>>(data, imageWidth, imageHeight);
+
+	RTKernel<<<numBlocks, threadsPerBlock>>>(data, tree, imageWidth, imageHeight);
+
+
 	cudaThreadSynchronize();
 
 	checkCUDAError();		

@@ -34,11 +34,15 @@ enum Materials {
 };
 
 #define NUM_PLANES 4
-#define NUM_SPHERES 2
+#define NUM_SPHERES 40
 #define NUM_LIGHTS 1
 
 #define SUB_CONST 4
 
-#define BILINEAR_SAMPLING 1
+// #define BILINEAR_SAMPLING 1
+
+// #define USE_BVH 1
+
+const uint32 SPLIT_LIMIT = 5;
 
 #endif

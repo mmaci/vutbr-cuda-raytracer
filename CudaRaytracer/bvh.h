@@ -1,9 +1,14 @@
+#ifndef BVH_H
+#define BVH_H
+
 #include <vector>
 #include <vector_types.h>
 #include "constants.h"
 #include <algorithm>
 
-const uint32 SPLIT_LIMIT = 3;
+
+
+
 
 struct Obj {
 
@@ -13,6 +18,44 @@ struct Obj {
 	float radius;
 
 	Sphere sphere;
+};
+
+struct cuBVHnode {
+	float3 cuMax;
+	float3 cuMin;
+
+	cuBVHnode* prev;
+	cuBVHnode* next;
+	cuBVHnode* parent;
+
+	Obj leaves[SPLIT_LIMIT];
+
+	__device__ HitInfo intersect(Ray const& ray) {
+		HitInfo hit;
+		
+		float tmin = FLT_MIN;
+		float tmax = FLT_MAX;
+ 
+		if (ray.direction.x != 0.0) {
+			float tx1 = (cuMin.x - ray.origin.x)/ray.direction.x;
+			float tx2 = (cuMax.x - ray.origin.x)/ray.direction.x;
+ 
+			tmin = CUDA::cumax(tmin, CUDA::cumin(tx1, tx2));
+			tmax = CUDA::cumin(tmax, CUDA::cumax(tx1, tx2));
+		}
+ 
+		if (ray.direction.y != 0.0) {
+			float ty1 = (cuMin.y - ray.origin.y)/ray.direction.y;
+			float ty2 = (cuMax.y - ray.origin.y)/ray.direction.y;
+ 
+			tmin = CUDA::cumax(tmin, CUDA::cumin(ty1, ty2));
+			tmax = CUDA::cumin(tmax, CUDA::cumax(ty1, ty2));
+		}
+ 		
+		hit.hit = (tmax >= tmin);
+
+		return hit;
+	}
 };
 
 struct BVHnode {
@@ -34,7 +77,7 @@ struct BVHnode {
 			case 'y': return 'x';
 			default: return 'x';
 		}		
-	}	
+	}			
 
 	void buildBVH(std::vector<Obj> objects, BVHnode* p, uint32 start, uint32 end, char axis)
 	{		
@@ -172,3 +215,40 @@ struct BVHnode {
 		}
 	}
 };
+
+// only run this when BVH is built
+// init with cuRoot = copyBVHToDevice(root);
+inline cuBVHnode* copyBVHToDevice(BVHnode* node, cuBVHnode* parent = nullptr)
+{
+	// address on GPU	
+	cuBVHnode* cuNode;
+	cudaMalloc((void***)&cuNode, sizeof(cuBVHnode));
+		
+	// copy BVHnode to a GPU friendly struct
+	cuBVHnode nodeCpy;
+	nodeCpy.cuMin = node->min;
+	nodeCpy.cuMax = node->max;
+	nodeCpy.parent = parent;
+	nodeCpy.prev = nullptr;
+	nodeCpy.next = nullptr;
+
+	// copy the leaves
+	// TODO: allocate leaves dynamically, now its static, but it wastes memory
+	int i = 0;
+	for (std::vector<Obj>::iterator it = node->leaves.begin(); it != node->leaves.end(); ++it, i++) {		
+		nodeCpy.leaves[i] = *it;
+	}
+	
+	// recurse
+	if (node->prev)
+		nodeCpy.prev = copyBVHToDevice(node->prev, cuNode);
+	if (node->next)
+		nodeCpy.next = copyBVHToDevice(node->next, cuNode);
+
+	// when we know the addresses of prev and next on GPU we can finally copy to GPU
+	cudaMemcpy(cuNode, &nodeCpy, sizeof(cuBVHnode), cudaMemcpyHostToDevice);
+
+	return cuNode;
+}
+
+#endif
