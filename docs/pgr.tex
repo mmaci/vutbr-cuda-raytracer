@@ -54,7 +54,7 @@
 %---------------------------------------------------------------------------
 \section{Použité technologie}
 
-\subsection{Použité technologie}
+\subsection{Technologie potřebné pro spuštění programu:}
 \begin{itemize}
 	\item CUDA 3.0
 	\item OpenGL 4
@@ -70,7 +70,7 @@
 %---------------------------------------------------------------------------
 \section{Použité zdroje}
 
-\subsection{Studijní zdroje}
+\subsection{Studijní zdroje:}
 \begin{itemize}
 	\item Přednáška PGR (Realistické zobrazování I - Ray Tracing)
 	\item \href{https://www.fit.vutbr.cz/study/courses/PGR/private/Aurelius.zip}{Ray-tracer Aurelius}
@@ -78,7 +78,7 @@
 	\item \href{http://docs.nvidia.com/cuda}{CUDA Toolkit Documentation}
 \end{itemize}
 
-\subsection{Doplňujicí zdroje}
+\subsection{Doplňujicí zdroje:}
 \begin{itemize}
 	\item \href{http://cs.wikipedia.org/wiki/Phong%C5%AFv_osv%C4%9Btlovac%C3%AD_model}{Phongův osvětlovací model}
 	\item \href{http://stackoverflow.com/questions/19013156/how-does-cuda-4-0-support-recursion}{Rady ohledně rekurze v CUDA}
@@ -160,10 +160,7 @@ Při kompilaci lze zapnout/vypnout v souboru \verb|constants.h| parametry se kte
 %---------------------------------------------------------------------------
 \section{Zvláštní použité znalosti}
 
-Uveďte informace, které byly potřeba nad rámec výuky probírané na FIT.
-Vysvětlete je pomocí obrázků, schémat, vzorců apod. 
-
-Rozsah: podle potřeby 
+V podstatě všechny vědomosti, které jsme museli nastudovat ohledně architektury CUDA, programovani a debugováni CUDY v prostředí Visual studio 2012 a NVIDIA Nsight.
 
 %---------------------------------------------------------------------------
 \section{Rozdělení práce v týmu}
@@ -172,10 +169,6 @@ Rozsah: podle potřeby
 \item xbures19: Phongův osvětlovací model, úprava bilinear sampling, část raytraceru 
 \item xmacen02: Základní kostra programu, optimalizace využitých paměťových jednotek, bilinear sampling, část raytraceru 
 \end{itemize}
-Pokud to bude vhodné, použijte odrážky místo souvislých vět.
-
-Rozsah: co nejstručnější tak, aby bylo zřejmé, jak byla dělena práce a za co v
-projektu je kdo zodpovědný.
 
 %---------------------------------------------------------------------------
 \section{Co bylo nejpracnější}
@@ -201,60 +194,46 @@ hospodaření s časem, atd.
 Rozsah: formulujte stručně, uchopte cca 3-5 věcí
 
 Naučili jsme se více o architektuře CUDA, vyzkoušeli si implementovat phongův osvětlovací model a
-raytracer. Dále jsme si prostudovali možné algoritmické optimalizace raytraceru.
+raytracer. Dále jsme si prostudovali možné algoritmické optimalizace raytraceru a některé znich implementovali.
 
 %---------------------------------------------------------------------------
 \section{Autoevaluace}
 
-Ohodnoťte vaše řešení v jednotlivých kategoriích (0 – nic neuděláno,
-zoufalství, 100\% – dokonalost sama). Projekt, který ve finále obdrží plný
-počet bodů, může mít složky hodnocené i hodně nízko. Uvedení hodnot blízkých
-100\% ve všech nebo mnoha kategoriích může ukazovat na nepochopení problematiky
-nebo na snahu kamuflovat slabé stránky projektu. Bodově hodnocena bude i
-schopnost vnímat silné a slabé stránky svého řešení.
-
-\paragraph{Technický návrh (60\%):} (analýza, dekompozice problému, volba
+\paragraph{Technický návrh (85\%):} (analýza, dekompozice problému, volba
 vhodných prostředků, $\ldots$) 
-Stručně (1-2 řádky) komentujte hodnocení. 
+Tvorbu programu jsme si před implementací dobře rozmysleli a až na pár úprav nebylo nutné přepisovat již implementované části.
 
-\paragraph{Programování (70\%):} (kvalita a čitelnost kódu, spolehlivost běhu,
-obecnost řešení, znovupoužitelnost, $\ldots$)
-Stručně (1-2 řádky) komentujte hodnocení. 
+\paragraph{Programování (75\%):}
+Kód je dobře strukturováný, ale mohl by být více okomentován. 
+Implementovaný raytracer je možné dále rozšiřovat a upravovat.
 
-\paragraph{Vzhled vytvořeného řešení (80\%):} (uvěřitelnost zobrazení,
-estetická kvalita, vhled GUI, $\ldots$)
-Stručně (1-2 řádky) komentujte hodnocení. 
-Scéna vypadá docela pěkně.
+\paragraph{Vzhled vytvořeného řešení (80\%):} 
+Scéna vypadá docela pěkně. Některé optimalizace kvalitu mírně zhorší, ale vždy dle očekávání.
 
-\paragraph{Využití zdrojů (80\%):} (využití existujícího kódu a dat, využití
-literatury, $\ldots$)
+\paragraph{Využití zdrojů (90\%):}
 Hodně jsme využil již implementovaný raytracer. Trochu méně jsme pak použiváli dostupnou literaturu.
 
-\paragraph{Hospodaření s časem (60\%):} (rovnoměrné dotažení částí projektu,
-míra spěchu, chybějící části řešení, $\ldots$)
-Bylo by vhodné začít dřív s implementací.
+\paragraph{Hospodaření s časem (70\%):}
+Začali jsme docela brzo. Uprostřed náše snaha mírně opadla kvůli jiným povinnostem ve škole. Na závěr jsme se snažili vše dokončit.
 
-\paragraph{Spolupráce v týmu (95\%):} (komunikace, dodržování dohod, vzájemné
-spolehnutí, rovnoměrnost, $\ldots$)
-Stručně (1-2 řádky) komentujte hodnocení. 
-od začátku jsme komunikovali ohledně podmínek spolupráce. Následné programování pak probíhalo bez problémů.
+\paragraph{Spolupráce v týmu (95\%):}
+Od začátku jsme komunikovali ohledně podmínek spolupráce. Následné programování pak probíhalo bez problémů.
 
-\paragraph{Celkový dojem (85\%):} (pracnost, získané dovednosti, užitečnost,
+\paragraph{Celkový dojem (90\%):} (pracnost, získané dovednosti, užitečnost,
 volba zadání, cokoliv, $\ldots$)
-Stručně (5-10 řádků) komentujte hodnocení. 
-
+Stručně (5-10 řádků) komentujte hodnocení.
+Celý projekt se nám jevil mírně obtížnější vzhledem k ostatním projektům na škole. 
+Nicméně získané vědomosti a zkušenosti jsou určitě přínosem. 
+Vybrali jsme si téma projektu kvůli architektuře CUDA, kterou jsme si díky tomuto projektu přiblížili. 
+Celý projekt byl zajímavý také tím že jsme si vyzkoušeli vytvořit aplikaci uplně od začátku. 
 %---------------------------------------------------------------------------
 \section{Doporučení pro budoucí zadávání projektů}
 
 Co vám vyhovovalo a co nevyhovovalo na organizaci projektů? Které prvky by měly
 být zachovány, zesíleny, potlačeny, eliminovány?
-Určitě bychom uvítali zpřesnění zadání (stačili by stručné body).
+Do budoucna by určitě bylo vhodné mírně specifikovat požadavky k zadanému tématu (např. 5 odrážek). 
 
 %---------------------------------------------------------------------------
-\section{Různé}
-
-Ještě něco by v dokumentaci mělo být? Napište to sem! Podle potřeby i založte
-novou kapitolu.
 
 \end{document}
 % vim:set ft=tex expandtab enc=utf8:
