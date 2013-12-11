@@ -22,6 +22,7 @@ jste použili při tvorbě, atd. Text strukturujte, použijte odrážky,
 
 Rozsah: cca 7 odrážek
 Minimální požadavky pro spuštění programu:
+Použité technologie:
 \begin{itemize}
 \item CUDA 3.0
 \item Open GL
@@ -42,15 +43,16 @@ je použit kód nebo data, která nejsou uvedena tady, jedná se o závažný pr
 a projekt bude pravděpodobně hodnocen 0 body.
 
 Rozsah: potřebný počet odrážek
+Studijní zdroje:
 \begin{itemize}
 \item Přednáška PGR (Realistické zobrazování I - Ray Tracing)
 \item \href{https://www.fit.vutbr.cz/study/courses/PGR/private/Aurelius.zip}{Ray-tracer Aurelius}
 \item Přednáška PGP (Fotorealistcké zobrazování, optimalizace sledování paprsku)
-\item \href{http://cs.wikipedia.org/wiki/Phong%C5%AFv_osv%C4%9Btlovac%C3%AD_model}{Phongův osvětlovací model}
 \item \href{http://docs.nvidia.com/cuda}{CUDA Toolkit Documentation}
 \end{itemize}
-Další zdroje:
+Doplňujicí zdroje:
 \begin{itemize}
+\item \href{http://cs.wikipedia.org/wiki/Phong%C5%AFv_osv%C4%9Btlovac%C3%AD_model}{Phongův osvětlovací model}
 \item \href{http://stackoverflow.com/questions/19013156/how-does-cuda-4-0-support-recursion}{Rady ohledně rekurze v CUDA}
 \end{itemize}
 %---------------------------------------------------------------------------
@@ -81,9 +83,8 @@ Rozsah: podle potřeby
 \section{Rozdělení práce v týmu}
 
 \begin{itemize}
-\item Franta: udělal tohle, udělal tableto, ještě taky toto, vedl tým.
-\item Pepa: pracoval na tom, na tomhle a ještě na tomto.
-\item Mařenka: vytvořila tohle, tamto a ještě něco.
+\item xbures19: Phongův osvětlovací model, úprava bilinear sampling, část raytraceru 
+\item xmacen02: Základní kostra programu, optimalizace využitých paměťových jednotek, bilinear sampling, část raytraceru 
 \end{itemize}
 Pokud to bude vhodné, použijte odrážky místo souvislých vět.
 
@@ -98,6 +99,12 @@ potýkat, co zabralo čas.
 
 Rozsah: 5-10 řádků
 
+Na celé práci bylo asi nejložitější upravit algoritmus sledování paprsku tak,
+aby fungoval na architektuře CUDA. Dále pak správné rozdělení vláken do warpů 
+a rozhodnout, který druh paměti použít pro které proměnné. Mno času bylo zapotřebí  
+také věnovat rekurzi, kterou by sice CUDA měla podporovat od verze 3.0,  
+ovšem stále program havaroval kvůli přetečení zásobníku.
+
 %---------------------------------------------------------------------------
 \section{Zkušenosti získané řešením projektu}
 
@@ -106,6 +113,9 @@ programátorské, věci z oblasti počítačové grafiky, ale i spolupráci v t�
 hospodaření s časem, atd.
 
 Rozsah: formulujte stručně, uchopte cca 3-5 věcí
+
+Naučili jsme se více o architektuře CUDA, vyzkoušeli si implementovat phongův osvětlovací model a
+raytracer. Dále jsme si prostudovali možné algoritmické optimalizace raytraceru.
 
 %---------------------------------------------------------------------------
 \section{Autoevaluace}
@@ -117,31 +127,33 @@ počet bodů, může mít složky hodnocené i hodně nízko. Uvedení hodnot bl
 nebo na snahu kamuflovat slabé stránky projektu. Bodově hodnocena bude i
 schopnost vnímat silné a slabé stránky svého řešení.
 
-\paragraph{Technický návrh (50\%):} (analýza, dekompozice problému, volba
+\paragraph{Technický návrh (60\%):} (analýza, dekompozice problému, volba
 vhodných prostředků, $\ldots$) 
 Stručně (1-2 řádky) komentujte hodnocení. 
 
-\paragraph{Programování (50\%):} (kvalita a čitelnost kódu, spolehlivost běhu,
+\paragraph{Programování (70\%):} (kvalita a čitelnost kódu, spolehlivost běhu,
 obecnost řešení, znovupoužitelnost, $\ldots$)
 Stručně (1-2 řádky) komentujte hodnocení. 
 
-\paragraph{Vzhled vytvořeného řešení (50\%):} (uvěřitelnost zobrazení,
+\paragraph{Vzhled vytvořeného řešení (80\%):} (uvěřitelnost zobrazení,
 estetická kvalita, vhled GUI, $\ldots$)
 Stručně (1-2 řádky) komentujte hodnocení. 
+Scéna vypadá docela pěkně.
 
-\paragraph{Využití zdrojů (50\%):} (využití existujícího kódu a dat, využití
+\paragraph{Využití zdrojů (80\%):} (využití existujícího kódu a dat, využití
 literatury, $\ldots$)
-Stručně (1-2 řádky) komentujte hodnocení. 
+Hodně jsme využil již implementovaný raytracer. Trochu méně jsme pak použiváli dostupnou literaturu.
 
-\paragraph{Hospodaření s časem (50\%):} (rovnoměrné dotažení částí projektu,
+\paragraph{Hospodaření s časem (60\%):} (rovnoměrné dotažení částí projektu,
 míra spěchu, chybějící části řešení, $\ldots$)
-Stručně (1-2 řádky) komentujte hodnocení. 
+Bylo by vhodné začít dřív s implementací.
 
-\paragraph{Spolupráce v týmu (50\%):} (komunikace, dodržování dohod, vzájemné
+\paragraph{Spolupráce v týmu (95\%):} (komunikace, dodržování dohod, vzájemné
 spolehnutí, rovnoměrnost, $\ldots$)
 Stručně (1-2 řádky) komentujte hodnocení. 
+od začátku jsme komunikovali ohledně podmínek spolupráce. Následné programování pak probíhalo bez problémů.
 
-\paragraph{Celkový dojem (50\%):} (pracnost, získané dovednosti, užitečnost,
+\paragraph{Celkový dojem (85\%):} (pracnost, získané dovednosti, užitečnost,
 volba zadání, cokoliv, $\ldots$)
 Stručně (5-10 řádků) komentujte hodnocení. 
 
@@ -150,6 +162,7 @@ Stručně (5-10 řádků) komentujte hodnocení.
 
 Co vám vyhovovalo a co nevyhovovalo na organizaci projektů? Které prvky by měly
 být zachovány, zesíleny, potlačeny, eliminovány?
+Určitě bychom uvítali zpřesnění zadání (stačili by stručné body).
 
 %---------------------------------------------------------------------------
 \section{Různé}
