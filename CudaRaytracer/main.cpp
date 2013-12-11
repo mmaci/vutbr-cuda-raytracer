@@ -105,7 +105,7 @@ void display()
 
 	deltaTime += delta;
 	deltaTime /= 2.0f;
-	fps = 1.0f / deltaTime;
+	fps = deltaTime;
 
 	std::cout << std::fixed << fps << std::endl;
 }

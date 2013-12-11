@@ -37,9 +37,9 @@ enum Materials {
 #define NUM_SPHERES 50
 #define NUM_LIGHTS 1
 
-#define SUB_CONST 8
+#define SUB_CONST 4
 
-// #define BILINEAR_SAMPLING 1
+//#define BILINEAR_SAMPLING 1
 
 // #define USE_BVH 1
 
