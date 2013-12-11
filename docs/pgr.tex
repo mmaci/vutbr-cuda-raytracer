@@ -1,8 +1,35 @@
-\documentclass[11pt,a4paper]{article}
-\input{config}
+% nastavenia prostredia
+\documentclass[12pt,a4paper,titlepage,final]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1, IL2]{fontenc}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage[margin=2cm]{caption}
+\usepackage[top=3cm, left=1cm, right=1cm, text={17cm, 24cm}, ignorefoot]{geometry}
+\usepackage{color}
+\usepackage{url}
+\usepackage[bookmarksopen,colorlinks,plainpages=false,urlcolor=blue,unicode]{hyperref}
+\usepackage{setspace}
+\usepackage[czech]{babel}
+\singlespacing
 
 \begin{document}
-\titlepageandcontents
+	% define
+	\def\authora{Michal Riša}
+	\def\authorb{Pavel Macenauer}
+	\def\emaila{xbures19@stud.fit.vutbr.cz}
+	\def\emailb{xmacen02@stud.fit.vutbr.cz}
+	\def\docname{Počítačová grafika}
+	\def\projname{Raytracing na CUDA}
+	% titulna strana
+	\input{titlepage.tex}
+	% kapitoly
+	\newpage
+	\pagestyle{plain}
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
+	\setcounter{secnumdepth}{-1}
+	\setlength{\parindent}{1cm}	
 
 %---------------------------------------------------------------------------
 \section{Zadání}
@@ -24,15 +51,16 @@ Rozsah: cca 7 odrážek
 Minimální požadavky pro spuštění programu:
 Použité technologie:
 \begin{itemize}
-\item CUDA 3.0
-\item Open GL
-\item SDL
-\item 
+	\item CUDA 3.0
+	\item OpenGL 4
+	\item GLM
+	\item Glut
+	\item Glew
 \end{itemize}
-Při tvorbě jsme použili tyto programy:
+\subsection{Při tvorbě jsme použili tyto programy:}
 \begin{itemize}
-\item Visual studio 2012
-\item GitHub
+	\item Visual Studio 2012 + NSight
+	\item GitHub
 \end{itemize}
 %---------------------------------------------------------------------------
 \section{Použité zdroje}
@@ -54,12 +82,22 @@ Doplňujicí zdroje:
 \begin{itemize}
 \item \href{http://cs.wikipedia.org/wiki/Phong%C5%AFv_osv%C4%9Btlovac%C3%AD_model}{Phongův osvětlovací model}
 \item \href{http://stackoverflow.com/questions/19013156/how-does-cuda-4-0-support-recursion}{Rady ohledně rekurze v CUDA}
+\item \href{http://www.3dmuve.com/3dmblog/?p=182}{Bounding Volume Hierarchies (BVH) – A brief tutorial on what they are and how to implement them}
+\item \href{http://cuda-programming.blogspot.cz/2013/01/what-is-constant-memory-in-cuda.html}{What is constant memory in CUDA?}
+\item \href{http://cg.alexandra.dk/2009/08/10/triers-cuda-ray-tracing-tutorial/}{Triers CUDA ray tracing tutorial}
 \end{itemize}
 %---------------------------------------------------------------------------
 \section{Nejdůležitější dosažené výsledky}
 
-Popište 3 věci, které jsou na vašem projektu nejlepší. Nejlépe ukažte a
-komentujte obrázky, v nejhorším případě vypište textově.
+\begin{center}
+	\captionsetup{type=figure}
+		\includegraphics[width=14cm]{images/no-sampling-no-bvh.jpg}
+	\captionof{figure}{Vygenerovaná scéna bez využití jakéhokoliv urychlení}
+	
+		\captionsetup{type=figure}
+		\includegraphics[width=14cm]{images/with-sampling-no-bvh.jpg}
+	\captionof{figure}{Vygenerovaná scéna s využitím bilineární samplování}
+\end{center}
 
 %---------------------------------------------------------------------------
 \section{Ovládání vytvořeného programu}

@@ -68,3 +68,6 @@ Ankh.NoLoad
 *.mtc1
 *.out
 *.synctex.gz
+
+pgr.pdf
+*-converted-to.pdf
