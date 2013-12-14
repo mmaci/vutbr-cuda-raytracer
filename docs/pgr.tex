@@ -1,4 +1,4 @@
-% nastavenia prostredia
+% ----- formatovani dokumentu ----------------------------------------------------------------
 \documentclass[12pt,a4paper,titlepage,final]{report}
 \usepackage[utf8]{inputenc}
 \usepackage[T1, IL2]{fontenc}
@@ -8,31 +8,88 @@
 \usepackage[top=3cm, left=2cm, right=2cm, text={17cm, 24cm}, ignorefoot]{geometry}
 \usepackage{color}
 \usepackage{url}
-\usepackage[bookmarksopen,colorlinks,plainpages=false,urlcolor=blue,unicode]{hyperref}
 \usepackage{setspace}
-\usepackage[czech]{babel}
 \singlespacing
+\usepackage[square, numbers]{natbib} 
+\pagestyle{plain}
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\setcounter{secnumdepth}{-1}
+\setlength{\parindent}{1cm}	
+\usepackage{natbib}
+
+
+% ----- vyberte jazyk ------------------------------------------------------------------------
+\usepackage[english,czech]{babel}
+%\usepackage[english]{babel}
+
+% ----- titulky atp. -------------------------------------------------------------------------
+\newcommand\Course{Počítačová grafika}
+\newcommand\WorkTitle{Raytracing na CUDA}
+\newcommand\AuthorA{Jan Bureš}
+\newcommand\AuthorAEmail{xbures19@stud.fit.vutbr.cz}
+\newcommand\AuthorB{Pavel Macenauer}
+\newcommand\AuthorBEmail{xmacen02@stud.fit.vutbr.cz}
+\newcommand\Faculty{Fakulta Informačních Technologií}
+\newcommand\School{Vysoké Učení Technické v Brně}
+
+\usepackage[
+pdftitle={\WorkTitle},
+pdfauthor={\AuthorA, \AuthorB},
+bookmarks=true,
+colorlinks=true,
+breaklinks=true,
+urlcolor=blue,
+citecolor=blue,
+linkcolor=blue,
+unicode=true,
+]
+{hyperref}
+
+% ----- titulni strana -----------------------------------------------------------------------
 
 \begin{document}
-	% define
-	\def\authora{Jan Bureš}
-	\def\authorb{Pavel Macenauer}
-	\def\emaila{xbures19@stud.fit.vutbr.cz}
-	\def\emailb{xmacen02@stud.fit.vutbr.cz}
-	\def\docname{Počítačová grafika}
-	\def\projname{Raytracing na CUDA}
-	% titulna strana
-	\input{titlepage.tex}
-	% kapitoly
-	\newpage
-	\pagestyle{plain}
-	\pagenumbering{arabic}
-	\setcounter{page}{1}
-	\setcounter{secnumdepth}{-1}
-	\setlength{\parindent}{1cm}	
+	\begin{titlepage}
+	\begin{center}
+		\includegraphics[height=5cm]{images/logo.eps}
+	\end{center}
+	\vfill
+	\begin{center}
+		\begin{Large}
+			\Course\\
+		\end{Large}
+		\bigskip
+		\begin{Huge}
+			\WorkTitle\\
+		\end{Huge}
+	\end{center}
+	\vfill
+	\begin{center}
+		\begin{large}
+			\today
+		\end{large}
+	\end{center}
+	\vfill
+	\begin{flushleft}
+		\begin{large}
+			\begin{tabular}{lll}
+				Autoři: & \AuthorA, & \url{\AuthorAEmail} \\
+				        & \AuthorB, & \url{\AuthorBEmail} \\
+				& & \\
+				& \Faculty \\
+				& \School \\
+			\end{tabular}
+		\end{large}
+	\end{flushleft}
+\end{titlepage}		
+	
+% ----- obsah --------------------------------------------------------------------------------
+	
+\tableofcontents
 
 %---------------------------------------------------------------------------
-\section{Zadání}
+\newpage
+\chapter{Zadání}
 
 \begin{itemize}
 	\item Implementace Raytraceru pomocí technologie CUDA v následujícím rozsahu:
@@ -52,44 +109,9 @@
 \end{itemize}
 
 %---------------------------------------------------------------------------
-\section{Použité technologie}
+\chapter{Nejdůležitější dosažené výsledky}
 
-\subsection{Technologie potřebné pro spuštění programu:}
-\begin{itemize}
-	\item CUDA 3.0
-	\item OpenGL 4
-	\item GLM
-	\item Glut
-	\item Glew
-\end{itemize}
-\subsection{Při tvorbě jsme použili tyto programy:}
-\begin{itemize}
-	\item Visual Studio 2012 + NSight
-	\item GitHub
-\end{itemize}
-%---------------------------------------------------------------------------
-\section{Použité zdroje}
-
-\subsection{Studijní zdroje:}
-\begin{itemize}
-	\item Přednáška PGR (Realistické zobrazování I - Ray Tracing)
-	\item \href{https://www.fit.vutbr.cz/study/courses/PGR/private/Aurelius.zip}{Ray-tracer Aurelius}
-	\item Přednáška PGP (Fotorealistcké zobrazování, optimalizace sledování paprsku)
-	\item \href{http://docs.nvidia.com/cuda}{CUDA Toolkit Documentation}
-\end{itemize}
-
-\subsection{Doplňujicí zdroje:}
-\begin{itemize}
-	\item \href{http://cs.wikipedia.org/wiki/Phong%C5%AFv_osv%C4%9Btlovac%C3%AD_model}{Phongův osvětlovací model}
-	\item \href{http://stackoverflow.com/questions/19013156/how-does-cuda-4-0-support-recursion}{Rady ohledně rekurze v CUDA}
-	\item \href{http://www.3dmuve.com/3dmblog/?p=182}{Bounding Volume Hierarchies (BVH) – A brief tutorial on what they are and how to implement them}
-	\item \href{http://cuda-programming.blogspot.cz/2013/01/what-is-constant-memory-in-cuda.html}{What is constant memory in CUDA?}
-	\item \href{http://cg.alexandra.dk/2009/08/10/triers-cuda-ray-tracing-tutorial/}{Triers CUDA ray tracing tutorial}
-\end{itemize}
-%---------------------------------------------------------------------------
-\section{Nejdůležitější dosažené výsledky}
-
-\subsection{Scéna}
+\section{Scéna}
 \begin{itemize}
 	\item 50 koulí
 	\item 4 roviny
@@ -111,14 +133,13 @@
 	\vspace{5mm}
 Jedním z nápadů jak urychlit běh programu výpočtu bylo využít vzorkování/samplingu. Při výpočtu se inicializuje paprsek a následně výpočetní vlákno (thread) pro každý obrazový bod, jejich počet je tak roven ŠÍŘKA OBRAZU * VÝŠKA OBRAZU. 
 	
-	Při klasickém raytracingu na CPU, lze urychlit běh programu tak, že se nevyšle takto paprsek pro každý bod, ale třeba jen pro každý 8-smý a v případě, že paprsek trefí stále stejné primitivum, tak se barvy mezi těmito body interpolují. V opačném případě se pak vyšlou paprsky pro všechny body neb se jedná o rozhraní mezi 2-mi primitivy.
+Při klasickém raytracingu na CPU, lze urychlit běh programu tak, že se nevyšle takto paprsek pro každý bod, ale třeba jen pro každý 8-smý a v případě, že paprsek trefí stále stejné primitivum, tak se barvy mezi těmito body interpolují. V opačném případě se pak vyšlou paprsky pro všechny body neb se jedná o rozhraní mezi 2-mi primitivy.
 	
-	Na GPU je ten problém, že veškeré výpočty probíhají paralelně a jakékoliv podmínky dramaticky snižují výkonnost. Není tak jednoduše možné říct, kdy vyslat všechny paprsky a kdy jen některé, protože se paprsky posílají po skupinách. Optimalizaci jsme tak provedli pomocí bilineárního interpolování, kdy ve směru jak osy X, tak osy Y vyšleme počet paprsků dělený předem danou konstantou (na Obrázku 2. je hodnota konstanty 8), čímž snížíme počet výpočetních vláken druhou mocninou konstanty.
+Na GPU je ten problém, že veškeré výpočty probíhají paralelně a jakékoliv podmínky dramaticky snižují výkonnost. Není tak jednoduše možné říct, kdy vyslat všechny paprsky a kdy jen některé, protože se paprsky posílají po skupinách. Optimalizaci jsme tak provedli pomocí bilineárního interpolování, kdy ve směru jak osy X, tak osy Y vyšleme počet paprsků dělený předem danou konstantou (na Obrázku 2. je hodnota konstanty 8), čímž snížíme počet výpočetních vláken druhou mocninou konstanty.
 	
-	Vypočtené hodnoty následně uložíme do sdílené paměti v rámci jednoho warpu a pro celý obraz hodnoty dopočteme pouze z těchto vzorků. Výsledný obraz je však výrazně nižší kvality, než-li obraz vygenerovaný bez použití interpolace.
+Vypočtené hodnoty následně uložíme do sdílené paměti v rámci jednoho warpu a pro celý obraz hodnoty dopočteme pouze z těchto vzorků. Výsledný obraz je však výrazně nižší kvality, než-li obraz vygenerovaný bez použití interpolace.
 
-
-\subsection{Měření na NVidia Quadro K1000M}
+\section{Měření na NVidia Quadro K1000M}
 \begin{itemize}
 	\item CUDA Processing cores: 192
 	\item Memory: 2 GB
@@ -143,31 +164,17 @@ Jedním z nápadů jak urychlit běh programu výpočtu bylo využít vzorkován
 	\caption{Doba běhu kernelu}  
 \end{table}
 
-
 %---------------------------------------------------------------------------
-\section{Ovládání vytvořeného programu}
+\chapter{Zvláštní použité znalosti}
 
-Program se spustí přes RayTracer.exe s tím, že v konzoli se vypisují hodnoty doby výpočtu kernelu v sekundách.
-
-Při kompilaci lze zapnout/vypnout v souboru \verb|constants.h| parametry se kterými se scéna vypočítává:
-\begin{itemize}
-	\item \verb|NUM_SPHERES| počet koulí ve scéně pro zvýšení komplexity
-	\item \verb|BILINEAR_SAMPLING| využití bilineární interpolace
-	\item \verb|SUB_CONST| konstanta, kterou se redukuje počet vláken při bilineárním interpolování
-	\item \verb|USE_BVH| využití Bounding Volume Hierarchy
-\end{itemize}
-
-%---------------------------------------------------------------------------
-\section{Zvláštní použité znalosti}
-
-\subsection{NVidia CUDA}
+\section{NVidia CUDA}
 Hlavní co jsme museli nastudovat jsou vědomosti ohledně technologie CUDA tedy struktura pamětí, jak je používat pomocí jejího C++ API a v kombinaci s programováním na CPU.
 
 K debugování a programování jsme následně využívali vývojové prostředí Microsoft Visual Studio 2012 s NVidia NSight.
 
 Museli jsme nastudovat i témata neprobíraná, resp. jen z lehka naťuklá na přenáškách. Jedním z nich je akcelerační struktura zvaná BVH.
 
-\subsection{Krátce o Bounding Volume Hierarchy}
+\section{Krátce o Bounding Volume Hierarchy}
 Jedná se o akcelerační strukturu při výpočtech v počítačové grafické.
 
 \paragraph{Konstrukce}
@@ -181,6 +188,8 @@ Jedná se o akcelerační strukturu při výpočtech v počítačové grafické.
 
 
 %---------------------------------------------------------------------------
+\chapter{Práce na projektu}
+
 \section{Rozdělení práce v týmu}
 
 \begin{itemize}
@@ -228,6 +237,38 @@ Od začátku jsme komunikovali ohledně podmínek spolupráce. Následné progra
 Celý projekt se nám jevil mírně obtížnější vzhledem k ostatním projektům na škole, především z důvodu dostupnosti materiálů, kterých je na internetu spousty, nicméně vyfiltrovat z nich použitelné informace je časově náročné. 
 Získané vědomosti a zkušenosti jsou určitě přínosem. 
 Vybrali jsme si téma projektu kvůli architektuře CUDA, kterou jsme předtím v praxi nikdy nepoužívali a tímto jsem si udělali nejen lepší představu o samotné technologii ale i o moderních grafických kartách a naučili se pracovat s další technologií, která má své místo v softwarové budoucnosti. Celý projekt byl zajímavý také tím že jsme si vyzkoušeli vytvořit grafickou aplikaci uplně od začátku.
+
+%---------------------------------------------------------------------------
+\chapter{Ovládání vytvořeného programu}
+
+\section{Technologie potřebné pro spuštění programu}
+\begin{itemize}
+	\item CUDA 4.0
+	\item OpenGL 4
+	\item GLM
+	\item Glut
+	\item Glew
+	\item MSVC 2012
+\end{itemize}
+
+\section{Programy a služby použité při tvorbě}
+\begin{itemize}
+	\item Visual Studio 2012 + NSight
+	\item repositář na GitHub.com + GitHub WIN klient
+\end{itemize}
+
+\section{Obsluha programu}
+Program se spustí přes RayTracer.exe s tím, že v konzoli se vypisují hodnoty doby výpočtu kernelu v sekundách.
+
+Při kompilaci lze zapnout/vypnout v souboru \verb|constants.h| parametry se kterými se scéna vypočítává:
+\begin{itemize}
+	\item \verb|NUM_SPHERES| počet koulí ve scéně pro zvýšení komplexity
+	\item \verb|BILINEAR_SAMPLING| využití bilineární interpolace
+	\item \verb|SUB_CONST| konstanta, kterou se redukuje počet vláken při bilineárním interpolování
+	\item \verb|USE_BVH| využití Bounding Volume Hierarchy
+\end{itemize}
+
+
 %---------------------------------------------------------------------------
 \section{Doporučení pro budoucí zadávání projektů}
 
@@ -238,6 +279,21 @@ Následující body jsou spíše nápady pro vytvoření možnosti v daném čas
 \end{itemize}
 
 %---------------------------------------------------------------------------
+
+\bibliographystyle{plain}
+
+\nocite{pgr-raytracing}
+\nocite{aurelius}
+\nocite{pgp-optimalizace}
+\nocite{cuda-doc}
+\nocite{phong-wiki}
+\nocite{so-stack}
+\nocite{bvh}
+\nocite{cmemory}
+\nocite{trier}
+
+\bibliography{reference}
+\addcontentsline{toc}{chapter}{Literatura}
 
 \end{document}
 % vim:set ft=tex expandtab enc=utf8:
