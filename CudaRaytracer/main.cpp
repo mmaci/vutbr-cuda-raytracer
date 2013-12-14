@@ -43,11 +43,15 @@ cudaGraphicsResource_t cudaResourceBuffer;
 /** @var cudaGraphicsResource_t cuda texture resource */
 cudaGraphicsResource_t cudaResourceTexture;
 
+float hmm = 3.0f;
+	float hmm2 = 3.0f;
+	float hmm3 = -7.f;
 extern "C" void launchRTKernel(uchar3* , uint32, uint32, Sphere*, Plane*, PointLight*, PhongMaterial*, Camera*, cuBVHnode*);
 
 float deltaTime = 0.0f;
 float fps = 0.0f;
 float delta;
+bool switchb = true;
 
 /**
 * 1. Maps the the PBO (Pixel Buffer Object) to a data pointer
@@ -62,6 +66,34 @@ void runCuda()
 	cudaGraphicsMapResources(1, &cudaResourceBuffer, 0);
 	// cudaGraphicsMapResources(1, &cudaResourceTexture, 0);
 	cudaGraphicsResourceGetMappedPointer((void **)&data, &numBytes, cudaResourceBuffer);
+	
+	hmm += 0.01f;
+	hmm2 += 0.02f;
+	
+	if (hmm3 > 9.f)
+		switchb = false;
+	if (hmm3 < -7.f) {
+		switchb = true;
+		hmm = 3.f;
+		hmm2 = 3.f;
+	}
+	
+	if(switchb) {
+		hmm3 += 0.1f;
+		hmm += 0.01f;
+		hmm2 += 0.02f;
+	}
+	else {
+		hmm3 -= 0.1f;
+		hmm -= 0.01f;
+		hmm2 -= 0.02f;
+	}
+
+
+	scene.getCamera()->lookAt(make_float3(hmm, hmm2, hmm3),  // eye
+		make_float3(0.f, 0.f, 1.f),   // target
+		make_float3(0.f, 1.f, 0.f),   // sky
+		30, (float)WINDOW_WIDTH/WINDOW_HEIGHT);
 
 	launchRTKernel(data, WINDOW_WIDTH, WINDOW_HEIGHT, scene.getSpheres(), scene.getPlanes(), scene.getLights(), scene.getMaterials(), scene.getCamera(), cuBVHTree);		
 
@@ -76,7 +108,7 @@ void runCuda()
 void display()
 {
 	
-
+	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -240,11 +272,8 @@ void initScene() {
 	PointLight l2(make_float3(9.f, 10.f, 1.f), Color(1.f, 1.f, 1.f));
 	scene.add(l2);*/
 	
-	scene.getCamera()->init();
-	scene.getCamera()->lookAt(make_float3(3.f, 3.f, -7.f),  // eye
-		make_float3(0.f, 0.f, 1.f),   // target
-		make_float3(0.f, 1.f, 0.f),   // sky
-		30, (float)WINDOW_WIDTH/WINDOW_HEIGHT);
+	
+	scene.getCamera()->init();	
 
 	// cudaMalloc((void***) &devSpheres, scene.getSphereCount() * sizeof(Sphere));
 	// cudaMalloc((void***) &devPlanes, scene.getPlaneCount() * sizeof(Plane));
